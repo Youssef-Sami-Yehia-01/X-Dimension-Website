@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Head 50 *)",
+      "Bash(npx playwright *)",
+      "Bash(cd /tmp)",
+      "Bash(npm install *)",
+      "Bash(node -e ' *)",
+      "PowerShell(Test-Path *)",
+      "PowerShell(pip show *)",
+      "PowerShell(pip install *)",
+      "PowerShell(python -c \"import pyassimp; print\\(pyassimp.__version__\\)\" 2>&1)",
+      "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"C:\\\\Users\\\\youss\\\\Downloads\\\\old-japanese-store-lowpoly\\\\source\\\\extracted\\\\japanese store.fbx\"\\); [System.Text.Encoding]::ASCII.GetString\\($bytes[0..20]\\))",
+      "Read(//mnt/d/Youssef/Work/X-Dimension/**)",
+      "PowerShell(ls \"D:\\\\Youssef\\\\Work\\\\X-Dimension\\\\X-Dimension Website\\\\public\" 2>$null; if \\(-not \\(Test-Path \"D:\\\\Youssef\\\\Work\\\\X-Dimension\\\\X-Dimension Website\\\\public\"\\)\\) { New-Item -ItemType Directory -Path \"D:\\\\Youssef\\\\Work\\\\X-Dimension\\\\X-Dimension Website\\\\public\" })"
+    ]
+  }
+}
