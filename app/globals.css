@@ -11,6 +11,6 @@ body {
   background: #151515;
   color: #fff;
   overflow: hidden;
-  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
