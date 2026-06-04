@@ -87,7 +87,7 @@ function buildStreetGeometry() {
    * Road + pavements use randomised row spacing so there is no visible
    * Z-rhythm. Each "row" picks a random Z within its allocated slice.
    */
-  const Z_ROWS   = 500          // more rows = denser street
+  const Z_ROWS   = 380          // rows along the street
   const interval = Z_RANGE / Z_ROWS
 
   for (let row = 0; row < Z_ROWS; row++) {
@@ -118,7 +118,7 @@ function buildStreetGeometry() {
     }
 
     /* ── Wide pavements ──────────────────────────────────────────── */
-    const SWALK_COLS = 160       // 160 cols × 60 units ≈ one point every 0.375 units
+    const SWALK_COLS = 95        // 95 cols × 60 units ≈ one point every 0.63 units
     const swalkBase  = HALF_ROAD + CURB_W
     for (let c = 0; c < SWALK_COLS; c++) {
       const t  = c / (SWALK_COLS - 1)
@@ -127,7 +127,7 @@ function buildStreetGeometry() {
     }
 
     /* Extra scatter on pavements */
-    for (let s = 0; s < 20; s++) {
+    for (let s = 0; s < 9; s++) {
       pt(-(swalkBase + Math.random() * SWALK_W), SWALK_Y, z,  0.22, 0.06,  0.08,  0.08, 0.12)
       pt( (swalkBase + Math.random() * SWALK_W), SWALK_Y, z,  0.22, 0.06,  0.08,  0.08, 0.12)
     }

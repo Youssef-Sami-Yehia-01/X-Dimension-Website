@@ -56,7 +56,7 @@ const FRAG = `
   float fbm(vec2 p) {
     float v = 0.0;
     float a = 0.5;
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 4; i++) {
       v += a * noise(p);
       p = p * 2.0 + vec2(1.7, 9.2);
       a *= 0.5;
@@ -169,10 +169,15 @@ export default function FogCanvas({ intensity = 1.0, interactive = true }) {
     }
     window.addEventListener('mousemove', onMove)
 
+    /*
+     * Render the fog at HALF resolution. It's heavily blurred soft smoke, so
+     * the low-res buffer is invisible once CSS stretches it to fullscreen —
+     * but it's ~4-9x cheaper per frame than rendering at full device pixels.
+     */
+    const RES_SCALE = 0.5
     const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
-      canvas.width  = Math.floor(window.innerWidth  * dpr)
-      canvas.height = Math.floor(window.innerHeight * dpr)
+      canvas.width  = Math.max(1, Math.floor(window.innerWidth  * RES_SCALE))
+      canvas.height = Math.max(1, Math.floor(window.innerHeight * RES_SCALE))
       gl.viewport(0, 0, canvas.width, canvas.height)
     }
     resize()
