@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import gsap from 'gsap'
 import { useStore } from '@/store/useStore'
+import FluidCanvas from './FluidCanvas'
 import styles from './IntroScreen.module.css'
 
 export default function IntroScreen() {
@@ -66,6 +67,9 @@ export default function IntroScreen() {
 
   return (
     <div ref={overlayRef} className={styles.overlay} onClick={handleClick}>
+
+      {/* Fluid smoke simulation backdrop (z-index 0) */}
+      <FluidCanvas />
 
       {/* Logo at z-index 1 */}
       <div ref={logoRef} className={styles.logoWrap}>

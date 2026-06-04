@@ -15,9 +15,9 @@ export default function ClientApp() {
 
   return (
     <main className={styles.main}>
-      {/* Single shared smoke layer behind everything — full + mouse-reactive
-          during the intro, subtler and static once inside the scene. */}
-      <FogCanvas intensity={isExploring ? 0.5 : 1.0} interactive={!isExploring} />
+      {/* Subtle static smoke behind the scene. The intro has its own fluid
+          backdrop (FluidCanvas), so this only runs once exploring. */}
+      {isExploring && <FogCanvas intensity={0.5} interactive={false} />}
 
       {/* 3D canvas (transparent) — warm and ready before the intro ends */}
       <Scene />
