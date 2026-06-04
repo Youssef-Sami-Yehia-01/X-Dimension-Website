@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useStore } from '@/store/useStore'
+import { injectCurvature } from './curveWorld'
 
 /*
  * BuildingCloud — loads the pre-sampled building point data from
@@ -18,7 +19,7 @@ const REVEAL_START = 28     // above building top (~22 units)
 const REVEAL_END   = -8
 const REVEAL_DUR   = 3.8    // match terrain so both waves run together
 
-export default function BuildingCloud() {
+export default function BuildingCloud({ position = [0, 0, 0] }) {
   const [data, setData]   = useState(null)
   const meshRef           = useRef()
   const revealStart       = useRef(null)
@@ -143,6 +144,9 @@ void main() {`
         #include <alphatest_fragment>`
       )
 
+      /* Spherical-world bend — keeps buildings sitting on the curved road */
+      injectCurvature(shader)
+
       mat.userData.shader = shader
     }
 
@@ -175,7 +179,7 @@ void main() {`
       geometry={geometry}
       material={material}
       /* Centred on XZ; negative Y sinks the base into average terrain level */
-      position={[0, -1, -5]}
+      position={position}
     />
   )
 }

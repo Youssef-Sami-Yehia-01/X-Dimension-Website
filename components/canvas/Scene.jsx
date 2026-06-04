@@ -3,41 +3,60 @@
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
-import TerrainCloud from './TerrainCloud'
+import StreetCloud from './StreetCloud'
 import BuildingCloud from './BuildingCloud'
+import DustCloud from './DustCloud'
 import styles from './Scene.module.css'
 
 /*
- * Scene — root R3F Canvas.
+ * Scene — street view.
  *
- * Fog: FogExp2 with density 0.018.
- *   - Points within ~20 units: nearly clear
- *   - Points at ~60 units: ~75 % fogged → visibly dimming
- *   - Points at ~90 units: ~95 % fogged → vanishing into black
- * This replicates the Minecraft "render distance" fade without any hard cutoff.
+ * The camera sits at street level looking down the road (Z axis).
+ * Street runs from Z = +30 (behind camera) to Z = -200 (horizon).
  *
- * Background: solid black so fogged points blend seamlessly into the void.
+ * Left side:  building placeholder (will become proper models later).
+ * Right side: empty — reserved for 3D text sections.
  *
- * Camera: positioned above-and-behind, looking across the terrain at a slight
- * downward angle — gives the cinematic horizon effect.
+ * Fog colour matches #151515 background so distant particles dissolve
+ * seamlessly into the scene background.
  */
 export default function Scene() {
   return (
     <div className={styles.root}>
       <Canvas
-        camera={{ position: [0, 14, 42], fov: 55, near: 0.5, far: 400 }}
-        gl={{ antialias: true, alpha: false }}
-        onCreated={({ scene }) => {
-          scene.background = new THREE.Color(0x151515)
-          /* Exponential fog — same colour as background so far points dissolve seamlessly */
-          scene.fog = new THREE.FogExp2(0x151515, 0.018)
+        className={styles.canvas}
+        camera={{ position: [0, 2.5, 20], fov: 62, near: 0.1, far: 500 }}
+        gl={{ antialias: true, alpha: true }}
+        onCreated={({ scene, camera }) => {
+          /* Transparent canvas so the smoke layer shows through where the
+             scene fades out. Fog still tints particles toward the bg colour. */
+          scene.background = null
+          scene.fog = new THREE.FogExp2(0x151515, 0.02)
+          camera.lookAt(0, 1.5, -80)
         }}
       >
-        {/* OrbitControls for dev — lets you inspect the terrain freely */}
-        <OrbitControls makeDefault dampingFactor={0.06} enablePan={false} />
+        <OrbitControls
+          makeDefault
+          target={[0, 1.5, -20]}
+          dampingFactor={0.06}
+          enablePan={true}
+        />
 
-        <TerrainCloud />
-        <BuildingCloud />
+        {/* Floating dust/atmosphere filling the air */}
+        <DustCloud />
+
+        {/* The street: 2-lane road + kerbs + pavements */}
+        <StreetCloud />
+
+        {/*
+         * Left-side building placeholders — repeated down the road.
+         * x ≈ −(3.5 road + 0.18 kerb + 6 pavement + gap) ≈ −13
+         * Slight X variation per instance so they don't look cloned.
+         */}
+        <BuildingCloud position={[-13,   0.22,  -30]} />
+        <BuildingCloud position={[-13.5, 0.22,  -80]} />
+        <BuildingCloud position={[-12.5, 0.22, -130]} />
+        <BuildingCloud position={[-13,   0.22, -175]} />
       </Canvas>
     </div>
   )

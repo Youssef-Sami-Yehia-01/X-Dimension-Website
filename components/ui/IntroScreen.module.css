@@ -2,16 +2,19 @@
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: #151515;
+  /* Transparent — the shared FogCanvas + body background show through */
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: none; /* default cursor hidden — text label acts as cursor */
+  cursor: none;
 }
 
-/* ── Logo ────────────────────────────────────────────────────────────── */
+/* ── Logo (z-index 1, above fog) ─────────────────────────────────────── */
 .logoWrap {
-  opacity: 0; /* GSAP animates in */
+  position: relative;
+  z-index: 1;
+  opacity: 0;
   transform-origin: center;
 }
 
@@ -32,15 +35,12 @@
   }
 }
 
-/* ── Cursor-text ─────────────────────────────────────────────────────── */
+/* ── Cursor-text (z-index 2, above everything) ───────────────────────── */
 .hint {
-  /* Fixed + top-left origin so GSAP x/y drive it from (0,0) */
   position: fixed;
   top: 0;
   left: 0;
-  /* Visual offset: text sits slightly right and below the cursor tip */
   transform: translate(-50%, -50%);
-
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.42em;
@@ -49,9 +49,8 @@
   white-space: nowrap;
   pointer-events: none;
   user-select: none;
-  opacity: 0; /* GSAP animates in */
+  opacity: 0;
   z-index: 200;
-
   animation: blink 2.8s ease-in-out infinite 2.5s;
 }
 
