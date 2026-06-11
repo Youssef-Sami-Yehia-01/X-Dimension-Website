@@ -26,6 +26,9 @@ const Z_FAR    = -268
 const X_SPAN   = 96
 const FADE_DUR = 3.0   // fades in once the scan begins — hidden behind the intro
 
+const FOAM_COUNT = 2000
+const FOAM_BAND  = 9       // foam hugs the first metres past the shoreline
+
 function buildGeometry() {
   const pos = [], col = [], glo = [], rnd = []
 
@@ -39,6 +42,19 @@ function buildGeometry() {
     const depth = 0.6 + Math.random() * 0.4
     const b = Math.min(1, depth * (0.38 + g * g * 2.6))
     col.push(b * 0.45, b * 0.62, b * 0.80)
+    glo.push(g)
+    rnd.push(Math.random(), Math.random(), Math.random())
+  }
+
+  // Foam: a band of near-white points where the waves break on the sand
+  for (let i = 0; i < FOAM_COUNT; i++) {
+    const x = (Math.random() - 0.5) * X_SPAN * 2
+    const z = Z_SHORE - Math.pow(Math.random(), 1.8) * FOAM_BAND
+    pos.push(x, 0.05, z)
+
+    const g = 0.35 + Math.pow(Math.random(), 1.6) * 0.65
+    const b = 0.5 + g * 0.5
+    col.push(b * 0.92, b * 0.96, b * 1.0)
     glo.push(g)
     rnd.push(Math.random(), Math.random(), Math.random())
   }

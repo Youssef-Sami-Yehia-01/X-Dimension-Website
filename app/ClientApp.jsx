@@ -8,6 +8,7 @@ import FogCanvas from '@/components/ui/FogCanvas'
 import ScrollDriver from '@/components/ui/ScrollDriver'
 import ProjectTransitionOverlay from '@/components/ui/ProjectTransitionOverlay'
 import ProjectUI from '@/components/ui/ProjectUI'
+import ScreenReaderMirror from '@/components/ui/ScreenReaderMirror'
 import styles from './page.module.css'
 
 /* Three.js / R3F are browser-only */
@@ -19,6 +20,9 @@ export default function ClientApp() {
 
   return (
     <main className={styles.main}>
+      {/* Full journey content as semantic HTML for assistive tech + crawlers */}
+      <ScreenReaderMirror />
+
       {/* Shared smoke layer (behind the 3D canvas) */}
       <FogCanvas intensity={isExploring ? 0.5 : 1.0} interactive={!isExploring} />
 

@@ -29,6 +29,12 @@ import { sweepArrivalTime } from './scanTiming'
  *   · hover  — the cloud warms toward laser-amber + cursor becomes pointer
  *   · click  — opens the project orbit view (ProjectCameraController)
  *
+ * BIM preview (orbit mode): toggling `bimMode` morphs the scan into its
+ * deliverable — points snap onto a structured lattice and warm to data-
+ * amber while a procedural wireframe model (slabs, columns, window grid)
+ * draws itself through the cloud. Scan → BIM, the company's actual product,
+ * told in one gesture.
+ *
  * Reveal: grows bottom-up starting the moment the opening laser sweep
  * passes z = −55, like every other building in the city.
  *
@@ -60,6 +66,55 @@ export const BUILDING_WORLD_Z = -55
 
 const HOVER_COLOR = new THREE.Color(1.45, 1.05, 0.62)  // amber push (HDR-ish via additive)
 const IDLE_COLOR  = new THREE.Color(1, 1, 1)
+
+/* ── Procedural BIM wireframe (local space, matches the cropped villa) ──
+ * Slabs at each storey, a column grid along both long faces, and a window
+ * mullion grid on the street face — the structured model the scan becomes.
+ */
+const BIM_L = 21      // half-length (local X)
+const BIM_D = 16.9    // half-depth  (local Z)
+const BIM_H = 20      // height
+const BIM_FLOORS = [0, 6.7, 13.4, BIM_H]
+
+function buildBimWireframe() {
+  const v = []
+  const seg = (x1, y1, z1, x2, y2, z2) => v.push(x1, y1, z1, x2, y2, z2)
+
+  // Floor slabs (rectangles at each level)
+  for (const y of BIM_FLOORS) {
+    seg(-BIM_L, y, -BIM_D,  BIM_L, y, -BIM_D)
+    seg( BIM_L, y, -BIM_D,  BIM_L, y,  BIM_D)
+    seg( BIM_L, y,  BIM_D, -BIM_L, y,  BIM_D)
+    seg(-BIM_L, y,  BIM_D, -BIM_L, y, -BIM_D)
+  }
+
+  // Column grid on both long faces
+  for (let x = -BIM_L; x <= BIM_L + 0.01; x += 7) {
+    seg(x, 0, -BIM_D, x, BIM_H, -BIM_D)
+    seg(x, 0,  BIM_D, x, BIM_H,  BIM_D)
+  }
+  // Corner columns on the end faces
+  seg(-BIM_L, 0, -BIM_D, -BIM_L, BIM_H, -BIM_D)
+  seg(-BIM_L, 0,  BIM_D, -BIM_L, BIM_H,  BIM_D)
+  seg( BIM_L, 0, -BIM_D,  BIM_L, BIM_H, -BIM_D)
+  seg( BIM_L, 0,  BIM_D,  BIM_L, BIM_H,  BIM_D)
+
+  // Window grid on the street face (+Z): sill + head lines per storey,
+  // mullions between the columns
+  for (let f = 0; f < BIM_FLOORS.length - 1; f++) {
+    const sill = BIM_FLOORS[f] + 1.7
+    const head = BIM_FLOORS[f + 1] - 1.5
+    seg(-BIM_L, sill, BIM_D, BIM_L, sill, BIM_D)
+    seg(-BIM_L, head, BIM_D, BIM_L, head, BIM_D)
+    for (let x = -BIM_L + 3.5; x < BIM_L; x += 3.5) {
+      seg(x, sill, BIM_D, x, head, BIM_D)
+    }
+  }
+
+  const geo = new THREE.BufferGeometry()
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(v), 3))
+  return geo
+}
 
 export default function BaytAlUmmaCloud() {
   const { gl } = useThree()
@@ -200,6 +255,7 @@ export default function BaytAlUmmaCloud() {
         g.setAttribute('aRandVec', new THREE.BufferAttribute(rnd, 3))
         g.computeBoundingSphere()
         setGeo(g)
+        useStore.getState().assetLoaded()   // intro progress gate
       })
     return () => { cancelled = true }
   }, [])
@@ -221,11 +277,13 @@ export default function BaytAlUmmaCloud() {
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uTime    = { value: 0 }
       shader.uniforms.uRevealY = { value: -1.5 }
+      shader.uniforms.uBim     = { value: 0 }
 
       shader.vertexShader = shader.vertexShader.replace(
         'void main() {',
         `attribute vec3 aRandVec;
 uniform float uTime;
+uniform float uBim;
 varying float vLocalY;
 void main() {`
       )
@@ -251,6 +309,11 @@ void main() {`
         transformed.z += sin(uTime * spZ          + phZ) * amZ
                        + sin(uTime * spZ * 1.6180 + phZ * 1.7) * amZ * 0.5;
 
+        /* BIM preview: the scan organizes itself — points snap onto a
+           0.45-unit structured lattice */
+        vec3 snapped = (floor(transformed * 2.2) + 0.5) / 2.2;
+        transformed = mix(transformed, snapped, uBim);
+
         vLocalY = transformed.y;`
       )
 
@@ -258,11 +321,17 @@ void main() {`
         'void main() {',
         `varying float vLocalY;
 uniform float uRevealY;
+uniform float uBim;
 void main() {`
       )
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <alphatest_fragment>',
         `diffuseColor.a *= 1.0 - smoothstep(uRevealY - 1.5, uRevealY + 1.5, vLocalY);
+        /* BIM preview: warm data-amber tint, points recede so the model reads */
+        diffuseColor.rgb = mix(diffuseColor.rgb,
+                               diffuseColor.rgb * vec3(1.45, 1.02, 0.50) + vec3(0.02, 0.01, 0.0),
+                               uBim);
+        diffuseColor.a *= 1.0 - 0.45 * uBim;
         #include <alphatest_fragment>`
       )
 
@@ -275,8 +344,17 @@ void main() {`
     return mat
   }, [])
 
+  // BIM preview wireframe — drawn through the cloud as the points organize
+  const bimWireGeo = useMemo(() => buildBimWireframe(), [])
+  const bimWireMat = useMemo(() => new THREE.LineBasicMaterial({
+    color: 0xf5a623, transparent: true, opacity: 0, fog: false,
+  }), [])
+  const bimWireRef = useRef()
+  const bimAmount  = useRef(0)
+
   useEffect(() => () => geo?.dispose(), [geo])
   useEffect(() => () => material.dispose(), [material])
+  useEffect(() => () => { bimWireGeo.dispose(); bimWireMat.dispose() }, [bimWireGeo, bimWireMat])
 
   useEffect(() => {
     const canHover = projectState === 'idle'
@@ -309,6 +387,13 @@ void main() {`
     const wantHover = hoveredRef.current && useStore.getState().projectState === 'idle'
     material.color.lerp(wantHover ? HOVER_COLOR : IDLE_COLOR, Math.min(1, delta * 7))
     material.opacity += ((wantHover ? 1.0 : 0.9) - material.opacity) * Math.min(1, delta * 7)
+
+    // Scan → BIM morph (orbit mode toggle)
+    const bimTarget = useStore.getState().bimMode ? 1 : 0
+    bimAmount.current += (bimTarget - bimAmount.current) * Math.min(1, delta * 2.5)
+    if (shdr) shdr.uniforms.uBim.value = bimAmount.current
+    bimWireMat.opacity = bimAmount.current * 0.85
+    if (bimWireRef.current) bimWireRef.current.visible = bimAmount.current > 0.01
   })
 
   if (!geo) return null
@@ -324,6 +409,13 @@ void main() {`
       onPointerOut={() => setHovered(false)}
     >
       <points geometry={geo} material={material} frustumCulled={false} />
+      <lineSegments
+        ref={bimWireRef}
+        geometry={bimWireGeo}
+        material={bimWireMat}
+        visible={false}
+        frustumCulled={false}
+      />
     </group>
   )
 }

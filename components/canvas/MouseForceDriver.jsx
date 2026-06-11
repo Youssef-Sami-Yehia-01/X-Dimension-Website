@@ -4,6 +4,7 @@ import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { mouseRay, updateMouseUniforms } from './mouseForce'
+import { prefersReducedMotion } from './reducedMotion'
 
 /*
  * MouseForceDriver — updates the shared cursor ray + strength every frame.
@@ -19,6 +20,9 @@ const MAX     = 0.85  // ceiling while the mouse is flying
 export default function MouseForceDriver() {
   const raycaster = useRef(new THREE.Raycaster())
   const lastPointer = useRef(new THREE.Vector2(99, 99))
+
+  // Shader uniforms default to zero strength — simply never drive them
+  if (prefersReducedMotion) return null
 
   useFrame(({ camera, pointer }, delta) => {
     // Cursor ray in world space

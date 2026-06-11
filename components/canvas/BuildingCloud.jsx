@@ -24,6 +24,8 @@ import { injectCurvature } from './curveWorld'
 const MODEL_HEIGHT = 22
 const GROW_DUR     = 1.8     // seconds for one building to grow
 const GROW_RANGE   = 115     // camera distance that triggers growth (≲ fade-out range)
+const FLOOR_STEP   = 3.6     // reveal quantized to storey heights — buildings
+                             // assemble floor by floor, like a model being built
 
 let sharedGeometryPromise = null
 
@@ -70,6 +72,10 @@ function loadBuildingGeometry() {
     sharedGeometryPromise = fetch('/building-points.bin')
       .then(r => r.arrayBuffer())
       .then(buildGeometry)
+      .then((geo) => {
+        useStore.getState().assetLoaded()   // intro progress gate
+        return geo
+      })
   }
   return sharedGeometryPromise
 }
@@ -178,7 +184,10 @@ void main() {`
     if (revealStart.current !== null) {
       const t = THREE.MathUtils.clamp((clock.elapsedTime - revealStart.current) / GROW_DUR, 0, 1)
       const eased = 1 - Math.pow(1 - t, 3)
-      shdr.uniforms.uRevealY.value = -1.5 + eased * (MODEL_HEIGHT + 3)
+      // Quantize to storeys (the smoothstep feather softens each step)
+      const raw = eased * (MODEL_HEIGHT + 3)
+      const stepped = t >= 1 ? raw : Math.floor(raw / FLOOR_STEP) * FLOOR_STEP
+      shdr.uniforms.uRevealY.value = -1.5 + stepped
     }
 
     shdr.uniforms.uTime.value = clock.elapsedTime

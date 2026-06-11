@@ -13,6 +13,8 @@ export default function ProjectUI() {
   const projectState  = useStore(s => s.projectState)
   const activeProject = useStore(s => s.activeProject)
   const closeProject  = useStore(s => s.closeProject)
+  const bimMode       = useStore(s => s.bimMode)
+  const toggleBim     = useStore(s => s.toggleBim)
 
   if (projectState !== 'showing') return null
 
@@ -24,6 +26,22 @@ export default function ProjectUI() {
       <button className={styles.backBtn} onClick={closeProject}>
         ← Back to the street
       </button>
+
+      {/* Scan → BIM: the deliverable, demonstrated live */}
+      <div className={styles.viewToggle} role="group" aria-label="View mode">
+        <button
+          className={`${styles.viewBtn} ${!bimMode ? styles.viewActive : ''}`}
+          onClick={() => bimMode && toggleBim()}
+        >
+          Point cloud
+        </button>
+        <button
+          className={`${styles.viewBtn} ${bimMode ? styles.viewActive : ''}`}
+          onClick={() => !bimMode && toggleBim()}
+        >
+          BIM preview
+        </button>
+      </div>
 
       <aside className={styles.panel}>
         <p className={styles.kicker}>Project scan</p>

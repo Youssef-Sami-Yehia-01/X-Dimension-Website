@@ -5,6 +5,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useStore } from '@/store/useStore'
 import { sampleCamera, CAMERA_KEYFRAMES } from '@/config/journey'
+import { prefersReducedMotion } from './reducedMotion'
 
 /*
  * ScrollCamera — drives the camera along the journey's choreography.
@@ -21,8 +22,8 @@ import { sampleCamera, CAMERA_KEYFRAMES } from '@/config/journey'
  * component idles.
  */
 
-const SWAY_POS  = 0.55   // metres of camera drift toward the cursor
-const SWAY_LOOK = 2.2    // metres of gaze drift toward the cursor
+const SWAY_POS  = prefersReducedMotion ? 0 : 0.55  // camera drift toward the cursor
+const SWAY_LOOK = prefersReducedMotion ? 0 : 2.2   // gaze drift toward the cursor
 
 export const START_POS  = new THREE.Vector3(...CAMERA_KEYFRAMES[0].pos)
 export const START_LOOK = new THREE.Vector3(...CAMERA_KEYFRAMES[0].look)

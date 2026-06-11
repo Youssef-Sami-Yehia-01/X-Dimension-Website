@@ -11,6 +11,15 @@ export default function IntroScreen() {
   const hintRef      = useRef()
   const setExploring = useStore(s => s.setExploring)
 
+  // The click arms only once the point-cloud binaries are in —
+  // nobody scans an empty world
+  const assetsLoaded = useStore(s => s.assetsLoaded)
+  const assetsTotal  = useStore(s => s.assetsTotal)
+  const ready        = assetsLoaded >= assetsTotal
+  const readyRef     = useRef(false)
+  readyRef.current   = ready
+  const launchedRef  = useRef(false)
+
   useEffect(() => {
     gsap.set(hintRef.current, {
       x: window.innerWidth  / 2,
@@ -48,6 +57,9 @@ export default function IntroScreen() {
   }, [])
 
   const handleClick = () => {
+    if (!readyRef.current || launchedRef.current) return
+    launchedRef.current = true
+
     // Fly THROUGH the logo into the world; setExploring fires the laser sweep
     const tl = gsap.timeline({ onComplete: setExploring })
 
@@ -74,7 +86,11 @@ export default function IntroScreen() {
       </div>
 
       {/* Cursor-following text at z-index 2 */}
-      <p ref={hintRef} className={styles.hint}>Click to initiate scan</p>
+      <p ref={hintRef} className={styles.hint}>
+        {ready
+          ? 'Click to initiate scan'
+          : `Preparing scan — ${Math.round((assetsLoaded / assetsTotal) * 100)}%`}
+      </p>
 
     </div>
   )

@@ -16,7 +16,8 @@
 .topLeft,
 .rail,
 .bottomRight,
-.hint {
+.hint,
+.odometer {
   position: fixed;
   z-index: 10;
 }
@@ -189,10 +190,42 @@
   56%      { transform: translateY(0);   opacity: 0; }
 }
 
+/* ── Bottom-left: live capture odometer ──────────────────────────────── */
+.odometer {
+  bottom: 28px;
+  left: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.odoLabel {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.odoValue {
+  color: rgba(245, 166, 35, 0.85);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;   /* digits roll without jitter */
+  min-width: 150px;
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .hintWheel { animation: none; }
+}
+
 /* ── Mobile ─────────────────────────────────────────────────────────── */
 @media (max-width: 720px) {
   .railLabel { display: none; }
   .rail { right: 16px; gap: 14px; }
   .bottomRight { right: 52px; bottom: 24px; gap: 14px; }
   .topLeft { top: 18px; left: 18px; }
+  .odometer { display: none; }
 }

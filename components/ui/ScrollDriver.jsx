@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import gsap from 'gsap'
 import { useStore } from '@/store/useStore'
+import { SECTIONS } from '@/config/journey'
 
 /*
  * ScrollDriver — translates user input into the 0–1 journey progress.
@@ -13,11 +14,17 @@ import { useStore } from '@/store/useStore'
  * Nav jumps use flyTo(): instead of teleporting, the progress value itself
  * is tweened, so the camera physically travels the authored path through
  * the city to reach the section. Any manual input cancels the flight.
+ *
+ * Beat magnetism: when input rests near a beat's focus moment, the journey
+ * drifts gently onto it — every pause becomes a composed shot, but the
+ * pull radius is small enough that free-roaming never feels hijacked.
  */
 
 const WHEEL_SENSITIVITY = 0.00028  // ~36 mouse-wheel notches = full journey
 const TOUCH_SENSITIVITY = 0.0011   // drag a screen-height ≈ 0.8 progress
 const KEY_STEP          = 0.035
+const SNAP_DELAY_MS     = 750      // input quiet time before magnetism engages
+const SNAP_RADIUS       = 0.035    // max progress distance the magnet reaches
 
 let flightTween = null
 
@@ -49,16 +56,33 @@ function cancelFlight() {
 export default function ScrollDriver() {
   const isExploring = useStore(s => s.isExploring)
   const touchY = useRef(null)
+  const snapTimer = useRef(null)
 
   useEffect(() => {
     if (!isExploring) return
     const setProgress = useStore.getState().setScrollProgress
+
+    /* Beat magnetism: settle onto the nearest focus if input rests near one */
+    const armSnap = () => {
+      clearTimeout(snapTimer.current)
+      snapTimer.current = setTimeout(() => {
+        if (useStore.getState().projectState !== 'idle' || flightTween) return
+        const p = useStore.getState().scrollProgress
+        let best = null
+        for (const s of SECTIONS) {
+          const d = Math.abs(s.focus - p)
+          if (d > 0.0015 && d < SNAP_RADIUS && (!best || d < best.d)) best = { d, t: s.focus }
+        }
+        if (best) flyTo(best.t)
+      }, SNAP_DELAY_MS)
+    }
 
     const nudge = (delta) => {
       if (useStore.getState().projectState !== 'idle') return
       cancelFlight()
       const current = useStore.getState().scrollProgress
       setProgress(Math.max(0, Math.min(1, current + delta)))
+      armSnap()
     }
 
     const onWheel = (e) => {
@@ -100,6 +124,7 @@ export default function ScrollDriver() {
       window.removeEventListener('touchmove', onTouchMove)
       window.removeEventListener('touchend', onTouchEnd)
       window.removeEventListener('keydown', onKey)
+      clearTimeout(snapTimer.current)
       cancelFlight()
     }
   }, [isExploring])

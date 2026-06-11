@@ -1,7 +1,7 @@
 'use client'
 
-import { Suspense } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { Suspense, useEffect } from 'react'
+import { Canvas, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useStore } from '@/store/useStore'
 import { CAMERA_KEYFRAMES } from '@/config/journey'
@@ -22,6 +22,23 @@ import ProjectCameraController from './ProjectCameraController'
 import styles from './Scene.module.css'
 
 const START = CAMERA_KEYFRAMES[0]
+
+/* Wider lens on portrait screens — keeps the world-anchored panels and the
+ * road in frame when the viewport is tall and narrow. */
+function ResponsiveFov() {
+  const camera = useThree(s => s.camera)
+  const size   = useThree(s => s.size)
+
+  useEffect(() => {
+    const fov = size.width / size.height < 0.8 ? 78 : 62
+    if (camera.fov !== fov) {
+      camera.fov = fov
+      camera.updateProjectionMatrix()
+    }
+  }, [camera, size])
+
+  return null
+}
 
 export default function Scene() {
   // Hide the world while inside a project — only the hero building stays.
@@ -46,6 +63,7 @@ export default function Scene() {
         <ScrollCamera />
         <ProjectCameraController />
         <MouseForceDriver />
+        <ResponsiveFov />
 
         {/* Everything below is hidden while orbiting a project */}
         {showWorld && <SandCloud />}

@@ -51,5 +51,11 @@ await page.waitForTimeout(4500)
 await page.screenshot({ path: `${OUT}/8-orbit.png` })
 console.log('captured 8-orbit')
 
+// Scan → BIM morph
+await page.evaluate(() => window.__xdStore.getState().toggleBim())
+await page.waitForTimeout(2500)
+await page.screenshot({ path: `${OUT}/9-bim.png` })
+console.log('captured 9-bim')
+
 await browser.close()
 console.log('done')

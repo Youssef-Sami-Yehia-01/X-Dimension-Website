@@ -27,12 +27,16 @@ const SOCIAL = [
   { icon: MdEmail,     label: 'Email',     href: 'mailto:info@xdimension.co' },
 ]
 
+/* The fictional running total — pays off at the "9B+ points" stat */
+const TOTAL_POINTS = 9_412_337_204
+
 export default function SiteUI({ hidden = false }) {
   const logoRef   = useRef()
   const railRef   = useRef()
   const socialRef = useRef()
   const hintRef   = useRef()
   const fillRef   = useRef()
+  const odoRef    = useRef()
 
   // Re-render only when the active beat changes
   const activeId = useStore(s => sectionAt(s.scrollProgress).id)
@@ -65,11 +69,17 @@ export default function SiteUI({ hidden = false }) {
     return () => tl.kill()
   }, [])
 
-  /* Progress fill + hint dismissal — direct DOM writes, no re-renders */
+  /* Progress fill + odometer + hint dismissal — direct DOM writes, no re-renders */
   useEffect(() => {
     const unsub = useStore.subscribe((state) => {
       if (fillRef.current) {
         fillRef.current.style.transform = `scaleY(${state.scrollProgress})`
+      }
+      if (odoRef.current) {
+        // The journey "captures" points as you travel — eased so the count
+        // races early and lands exactly on the total at the end
+        const eased = 1 - Math.pow(1 - state.scrollProgress, 1.6)
+        odoRef.current.textContent = Math.round(TOTAL_POINTS * eased).toLocaleString('en-US')
       }
       if (!hintDismissed && state.scrollProgress > 0.03) {
         setHintDismissed(true)
@@ -132,6 +142,12 @@ export default function SiteUI({ hidden = false }) {
       <div ref={hintRef} className={styles.hint}>
         <span className={styles.hintMouse}><span className={styles.hintWheel} /></span>
         Scroll to travel the scan
+      </div>
+
+      {/* ── Bottom-left: live capture odometer ────────────────────── */}
+      <div className={styles.odometer} aria-hidden="true">
+        <span className={styles.odoLabel}>Points captured</span>
+        <span ref={odoRef} className={styles.odoValue}>0</span>
       </div>
     </div>
   )
