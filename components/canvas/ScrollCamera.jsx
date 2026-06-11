@@ -4,7 +4,7 @@ import { useRef, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useStore } from '@/store/useStore'
-import { sampleCamera, CAMERA_KEYFRAMES } from '@/config/journey'
+import { sampleCamera, CAMERA_KEYFRAMES, LOOP_END } from '@/config/journey'
 import { prefersReducedMotion } from './reducedMotion'
 
 /*
@@ -58,10 +58,18 @@ export default function ScrollCamera() {
     if (!isExploring) return
     if (useStore.getState().projectState !== 'idle') return  // project controller owns camera
 
-    // 1 — smooth the progress, then sample the authored path
-    const targetT = THREE.MathUtils.clamp(useStore.getState().scrollProgress, 0, 1)
+    // 1 — smooth the progress, then sample the authored path.
+    // The journey is cyclic: take the SHORT way around the loop, so a wrap
+    // from 1.21 → 0.01 glides forward through the seam instead of rewinding
+    // the whole world.
+    const targetT = useStore.getState().scrollProgress
     const lf = 1 - Math.pow(0.004, delta)   // ≈0.58/frame @60fps: cinematic but responsive
-    smoothT.current += (targetT - smoothT.current) * lf
+    let diff = targetT - smoothT.current
+    if (diff >  LOOP_END / 2) diff -= LOOP_END
+    if (diff < -LOOP_END / 2) diff += LOOP_END
+    smoothT.current += diff * lf
+    if (smoothT.current >= LOOP_END) smoothT.current -= LOOP_END
+    if (smoothT.current < 0)         smoothT.current += LOOP_END
     sampleCamera(smoothT.current, pos.current, look.current)
 
     // 2 — mouse sway in the camera's own frame (heavily smoothed)

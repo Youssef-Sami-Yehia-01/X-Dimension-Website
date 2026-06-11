@@ -18,6 +18,7 @@ import ScanPanels3D from './ScanPanels3D'
 import SolidHeadlines from './SolidHeadlines'
 import RoadMarkings from './RoadMarkings'
 import BaytAlUmmaCloud from './BaytAlUmmaCloud'
+import InteractReticle from './InteractReticle'
 import ProjectCameraController from './ProjectCameraController'
 import styles from './Scene.module.css'
 
@@ -53,7 +54,11 @@ export default function Scene() {
         camera={{ position: START.pos, fov: 62, near: 0.1, far: 500 }}
         dpr={[1, 2]}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-        onCreated={({ scene, camera }) => {
+        onCreated={({ gl, scene, camera }) => {
+          // Filmic grade: ACES rolls off the additive highlights so dense
+          // point clusters glow instead of clipping to flat white
+          gl.toneMapping = THREE.ACESFilmicToneMapping
+          gl.toneMappingExposure = 1.35
           scene.background = null
           scene.fog = new THREE.FogExp2(0x151515, 0.02)
           camera.lookAt(...START.look)
@@ -80,6 +85,7 @@ export default function Scene() {
 
         {/* Bayt Al-Umma — always mounted so the fly-in animation works */}
         <BaytAlUmmaCloud />
+        {showWorld && <InteractReticle />}
 
         {/* Environment zones: city → desert → coast */}
         {showWorld && <StreetCloud />}

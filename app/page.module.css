@@ -4,16 +4,19 @@
   height: 100vh;
 }
 
-/* Soft cinematic vignette — frames the 3D without touching the GPU */
+/* Soft cinematic vignette + a faint warm glow rising from the ground —
+   the grade layer, without touching the GPU */
 .vignette {
   position: fixed;
   inset: 0;
   z-index: 5;
   pointer-events: none;
-  background: radial-gradient(
-    ellipse at center,
-    transparent 52%,
-    rgba(0, 0, 0, 0.18) 78%,
-    rgba(0, 0, 0, 0.5) 100%
-  );
+  background:
+    linear-gradient(to top, rgba(245, 166, 35, 0.05), transparent 20%),
+    radial-gradient(
+      ellipse at center,
+      transparent 52%,
+      rgba(0, 0, 0, 0.18) 78%,
+      rgba(0, 0, 0, 0.5) 100%
+    );
 }

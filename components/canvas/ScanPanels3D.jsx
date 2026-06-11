@@ -193,6 +193,22 @@ function CtaBox({ x, y, label, onActivate, reg, regLine, opacity, fontSize = 0.4
 
 const titleHeight = (title) => title.split('\n').length * 1.05 * 1.12
 
+/** Hand-off line: each beat closes by passing the story to the next one. */
+function Handoff({ s, y, reg, regLine, centered = false }) {
+  if (!s.handoff) return null
+  const x = centered ? 0 : -s.panel.width / 2
+  return (
+    <>
+      <Rule x0={x} x1={x + 2.2} y={y + 0.45} color={AMBER} alpha={0.55} regLine={regLine} />
+      <Text ref={reg(0.8)} {...TEXT_PROPS} font={FONT_500} fontSize={0.28} color={DIM}
+        letterSpacing={0.22} anchorX={centered ? 'center' : 'left'} anchorY="top"
+        position={[x, y, 0]} fillOpacity={0}>
+        {s.handoff.toUpperCase()}
+      </Text>
+    </>
+  )
+}
+
 function TextBlocks({ s, reg, x0, w }) {
   const tH = titleHeight(s.title)
   const bodyY = -0.85 - tH - 0.5
@@ -229,6 +245,7 @@ function PanelText({ s }) {
     <group ref={groupRef} position={s.panel.position} visible={false}>
       <CornerBrackets w={w} h={h} regLine={regLine} />
       <TextBlocks s={s} reg={reg} x0={x0} w={w} />
+      <Handoff s={s} y={-h - 1.4} reg={reg} regLine={regLine} />
     </group>
   )
 }
@@ -256,6 +273,7 @@ function PanelCaseStudy({ s }) {
         onActivate={() => openProject('bayt-al-umma')}
         reg={reg} regLine={regLine} opacity={opacity}
       />
+      <Handoff s={s} y={-h - 1.4} reg={reg} regLine={regLine} />
     </group>
   )
 }
@@ -298,6 +316,7 @@ function PanelServices({ s }) {
           </group>
         )
       })}
+      <Handoff s={s} y={-h - 1.4} reg={reg} regLine={regLine} />
     </group>
   )
 }
@@ -357,6 +376,7 @@ function PanelStats({ s }) {
           </group>
         )
       })}
+      <Handoff s={s} y={-h - 1.4} reg={reg} regLine={regLine} centered />
     </group>
   )
 }
@@ -379,6 +399,7 @@ function PanelCareers({ s }) {
         onActivate={() => { window.location.href = `mailto:${s.cta}` }}
         reg={reg} regLine={regLine} opacity={opacity}
       />
+      <Handoff s={s} y={-h - 1.4} reg={reg} regLine={regLine} />
     </group>
   )
 }

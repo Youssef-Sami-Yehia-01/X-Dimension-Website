@@ -9,6 +9,7 @@ import ScrollDriver from '@/components/ui/ScrollDriver'
 import ProjectTransitionOverlay from '@/components/ui/ProjectTransitionOverlay'
 import ProjectUI from '@/components/ui/ProjectUI'
 import ScreenReaderMirror from '@/components/ui/ScreenReaderMirror'
+import CustomCursor from '@/components/ui/CustomCursor'
 import styles from './page.module.css'
 
 /* Three.js / R3F are browser-only */
@@ -46,6 +47,9 @@ export default function ClientApp() {
 
       {/* Back button + project info — visible while orbiting a project */}
       <ProjectUI />
+
+      {/* Amber dot + ring cursor (mouse-only; flares on interactives) */}
+      <CustomCursor />
     </main>
   )
 }

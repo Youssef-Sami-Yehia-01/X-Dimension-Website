@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { useStore } from '@/store/useStore'
+import { toggleAudio, sweepWhoosh } from './audio'
 import styles from './IntroScreen.module.css'
 
 export default function IntroScreen() {
@@ -19,6 +20,7 @@ export default function IntroScreen() {
   const readyRef     = useRef(false)
   readyRef.current   = ready
   const launchedRef  = useRef(false)
+  const [soundOn, setSoundOn] = useState(false)
 
   useEffect(() => {
     gsap.set(hintRef.current, {
@@ -61,7 +63,7 @@ export default function IntroScreen() {
     launchedRef.current = true
 
     // Fly THROUGH the logo into the world; setExploring fires the laser sweep
-    const tl = gsap.timeline({ onComplete: setExploring })
+    const tl = gsap.timeline({ onComplete: () => { setExploring(); sweepWhoosh() } })
 
     tl.to(logoRef.current, {
       scale: 9, opacity: 0, filter: 'blur(16px)',
@@ -91,6 +93,14 @@ export default function IntroScreen() {
           ? 'Click to initiate scan'
           : `Preparing scan — ${Math.round((assetsLoaded / assetsTotal) * 100)}%`}
       </p>
+
+      {/* Opt-in sound — toggled here so the AudioContext is born in a gesture */}
+      <button
+        className={styles.soundToggle}
+        onClick={(e) => { e.stopPropagation(); setSoundOn(toggleAudio()) }}
+      >
+        Sound: {soundOn ? 'on' : 'off'}
+      </button>
 
     </div>
   )

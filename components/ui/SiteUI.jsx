@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { FaFacebook, FaInstagram, FaLinkedin } from 'react-icons/fa6'
-import { MdEmail } from 'react-icons/md'
+import { MdEmail, MdVolumeUp, MdVolumeOff } from 'react-icons/md'
 import { useStore } from '@/store/useStore'
 import { SECTIONS, sectionAt } from '@/config/journey'
 import { flyTo } from './ScrollDriver'
+import { audioEnabled, toggleAudio, beatTick, setAudioProgress } from './audio'
 import styles from './SiteUI.module.css'
 
 /*
@@ -37,10 +38,15 @@ export default function SiteUI({ hidden = false }) {
   const hintRef   = useRef()
   const fillRef   = useRef()
   const odoRef    = useRef()
+  const returnRef = useRef()
 
   // Re-render only when the active beat changes
   const activeId = useStore(s => sectionAt(s.scrollProgress).id)
   const [hintDismissed, setHintDismissed] = useState(false)
+  const [soundOn, setSoundOn] = useState(audioEnabled())
+
+  /* Soft sonar blip every time the journey enters a new beat */
+  useEffect(() => { beatTick() }, [activeId])
 
   /* Entrance animation — HUD assembles from the edges */
   useEffect(() => {
@@ -72,14 +78,22 @@ export default function SiteUI({ hidden = false }) {
   /* Progress fill + odometer + hint dismissal — direct DOM writes, no re-renders */
   useEffect(() => {
     const unsub = useStore.subscribe((state) => {
+      // During the return flight (progress > 1) the HUD holds at "complete"
+      const p = Math.min(state.scrollProgress, 1)
       if (fillRef.current) {
-        fillRef.current.style.transform = `scaleY(${state.scrollProgress})`
+        fillRef.current.style.transform = `scaleY(${p})`
       }
       if (odoRef.current) {
         // The journey "captures" points as you travel — eased so the count
         // races early and lands exactly on the total at the end
-        const eased = 1 - Math.pow(1 - state.scrollProgress, 1.6)
+        const eased = 1 - Math.pow(1 - p, 1.6)
         odoRef.current.textContent = Math.round(TOTAL_POINTS * eased).toLocaleString('en-US')
+      }
+      setAudioProgress(p)   // the wind deepens toward the coast
+      if (returnRef.current) {
+        // Status line during the return flight (the loop's dark transit)
+        const inReturn = state.scrollProgress > 1.02 && state.scrollProgress < 1.2
+        returnRef.current.style.opacity = inReturn ? 1 : 0
       }
       if (!hintDismissed && state.scrollProgress > 0.03) {
         setHintDismissed(true)
@@ -122,8 +136,15 @@ export default function SiteUI({ hidden = false }) {
         ))}
       </nav>
 
-      {/* ── Bottom-right: social icons ────────────────────────────── */}
+      {/* ── Bottom-right: sound toggle + social icons ─────────────── */}
       <div ref={socialRef} className={styles.bottomRight}>
+        <button
+          className={styles.soundBtn}
+          aria-label={soundOn ? 'Mute sound' : 'Enable sound'}
+          onClick={() => setSoundOn(toggleAudio())}
+        >
+          {soundOn ? <MdVolumeUp size={18} /> : <MdVolumeOff size={18} />}
+        </button>
         {SOCIAL.map(({ icon: Icon, label, href }) => (
           <a
             key={label}
@@ -148,6 +169,11 @@ export default function SiteUI({ hidden = false }) {
       <div className={styles.odometer} aria-hidden="true">
         <span className={styles.odoLabel}>Points captured</span>
         <span ref={odoRef} className={styles.odoValue}>0</span>
+      </div>
+
+      {/* ── Center: return-flight status (loop transit) ───────────── */}
+      <div ref={returnRef} className={styles.returnStatus} aria-hidden="true">
+        Scan complete — returning to base
       </div>
     </div>
   )

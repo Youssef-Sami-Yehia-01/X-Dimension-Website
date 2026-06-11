@@ -27,7 +27,15 @@ import * as THREE from 'three'
 /* ── Camera choreography ─────────────────────────────────────────────────
  * Keyframes: { t, pos, look }. Sampled with a Catmull-Rom/Hermite blend so
  * the camera flows through (not between) the poses. `t` is scroll progress.
+ *
+ * THE LOOP: the journey is cyclic. Content lives in t 0…1; t 1…LOOP_END is
+ * the return flight — the camera lifts off the sea into a high survey
+ * transit (the whole scanned corridor glimpsed far below), descends behind
+ * the dunes, and lands EXACTLY on the t=0 pose. Scrolling wraps modulo
+ * LOOP_END, so Egypt repeats like a cylinder — no jump cut, ever.
  */
+export const LOOP_END = 1.22
+
 export const CAMERA_KEYFRAMES = [
   { t: 0.00, pos: [   0, 26,   36], look: [  0,  5,  -30] }, // low over the dunes — horizon ahead, the scan begins
   { t: 0.07, pos: [ 2.5, 15,   13], look: [ -1,  4,  -40] }, // descending as the street forms below
@@ -42,6 +50,12 @@ export const CAMERA_KEYFRAMES = [
   { t: 0.84, pos: [  -8, 11, -174], look: [  5,  2, -206] }, // sweeping across the shoreline
   { t: 0.92, pos: [   0, 4.5,-192], look: [  0,  6, -228] }, // skimming the beach to the finale
   { t: 1.00, pos: [   0, 3.2,-204], look: [  0,  8, -232] }, // settled — over the water, facing the monument
+
+  // ── Return flight (the loop) ──────────────────────────────────────
+  { t: 1.05, pos: [   0, 42, -210], look: [  0,  0, -238] }, // lifting off the sea
+  { t: 1.11, pos: [   0, 60, -105], look: [  0, -2, -162] }, // night transit — the corridor glides past below
+  { t: 1.17, pos: [   0, 56,   28], look: [  0,  8,  -22] }, // descending behind the dunes
+  { t: 1.22, pos: [   0, 26,   36], look: [  0,  5,  -30] }, // == t 0.00 — the loop closes
 ]
 
 /* Pre-built Vector3s (built once at module load — no per-frame allocation) */
@@ -114,6 +128,7 @@ export const SECTIONS = [
     kicker: '01 · The Scan',
     title: 'Reality,\ncaptured.',
     body: 'You are watching a laser scan in progress. X-Dimension turns Egypt’s built world — every façade, every street, every monument — into millimetre-accurate living data.',
+    handoff: 'The capture begins below',
     panel: { position: [-12, 16, -6], facing: [0, 26, 36], width: 13 },
   },
   {
@@ -124,6 +139,7 @@ export const SECTIONS = [
     kicker: '02 · Who we are',
     title: 'We measure\nwhat matters.',
     body: 'X-Dimension is a Cairo-based reality-capture studio for architects, engineers and conservators. We scan buildings, infrastructure and heritage sites — then hand you data you can build on.',
+    handoff: 'It starts with a landmark',
     panel: { position: [2.5, 10.5, -48], facing: [1.1, 2.9, -19.5], width: 13 },
   },
   {
@@ -136,6 +152,7 @@ export const SECTIONS = [
     body: 'The House of the Nation — home of Saad Zaghloul and a landmark of Egypt’s 1919 revolution. We documented it stone by stone in a single survey-grade point cloud, so its memory can outlast its masonry.',
     meta: 'Full documentation · survey-grade accuracy',
     cta: 'ENTER THE SCAN',
+    handoff: 'Every capture becomes intelligence',
     panel: { position: [-14, 25, -48], facing: [8, 6, -64], width: 13 },
   },
   {
@@ -151,6 +168,7 @@ export const SECTIONS = [
       { name: 'Heritage Documentation', desc: 'Digital twins of monuments, archived for restoration.' },
       { name: 'As-Built Drawings',      desc: 'Plans, sections and elevations, straight from the cloud.' },
     ],
+    handoff: 'Intelligence, at national scale',
     panel: { position: [-7, 15, -126], facing: [6.8, 22.8, -108], width: 14 },
   },
   {
@@ -165,6 +183,7 @@ export const SECTIONS = [
       { value: 9,   suffix: 'B+', label: 'POINTS CAPTURED' },
       { value: 2,   suffix: 'MM', label: 'SURVEY ACCURACY' },
     ],
+    handoff: 'Built by people who measure',
     panel: { position: [-2.5, 33, -153], facing: [0, 56, -130], width: 22 },
   },
   {
@@ -176,6 +195,7 @@ export const SECTIONS = [
     title: 'See Egypt\ndifferently.',
     body: 'Surveyors, BIM modellers, point-cloud wranglers — if you want your work to outlast you, we want to hear from you.',
     cta: 'careers@xdimension.co',
+    handoff: 'The survey ends at the sea',
     panel: { position: [1, 8.5, -193], facing: [-8, 11, -174], width: 13 },
   },
   {

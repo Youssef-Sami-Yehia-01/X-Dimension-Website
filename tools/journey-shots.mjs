@@ -19,6 +19,7 @@ const BEATS = [
   { name: '5-scale',    t: 0.74, settle: 4000 },
   { name: '6-careers',  t: 0.84, settle: 3500 },
   { name: '7-contact',  t: 1.0,  settle: 5000 },
+  { name: '7b-loop',    t: 1.11, settle: 4000 },   // return-flight transit
 ]
 
 // SwiftShader via ANGLE keeps rAF at 60fps in headless (default soft-GL crawls at ~4fps)

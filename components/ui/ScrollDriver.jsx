@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 import gsap from 'gsap'
 import { useStore } from '@/store/useStore'
-import { SECTIONS } from '@/config/journey'
+import { SECTIONS, LOOP_END } from '@/config/journey'
 
 /*
  * ScrollDriver — translates user input into the 0–1 journey progress.
@@ -28,22 +28,32 @@ const SNAP_RADIUS       = 0.035    // max progress distance the magnet reaches
 
 let flightTween = null
 
-/** Tween the journey to a target progress, travelling through the world. */
+/** Tween the journey to a target progress, travelling through the world.
+ *  Takes the SHORT way around the loop — "Scan again" from the monument
+ *  flies forward through the return leg, not backward through Egypt. */
 export function flyTo(target) {
   const store = useStore.getState()
   if (store.projectState !== 'idle') return
 
   const from = store.scrollProgress
-  const distance = Math.abs(target - from)
+  let delta = target - from
+  if (delta >  LOOP_END / 2) delta -= LOOP_END
+  if (delta < -LOOP_END / 2) delta += LOOP_END
+  const distance = Math.abs(delta)
   if (distance < 0.001) return
 
   flightTween?.kill()
   const proxy = { t: from }
   flightTween = gsap.to(proxy, {
-    t: target,
+    t: from + delta,
     duration: 0.9 + distance * 3.2,      // longer flights take longer — feels physical
     ease: 'power2.inOut',
-    onUpdate: () => useStore.getState().setScrollProgress(proxy.t),
+    onUpdate: () => {
+      let v = proxy.t
+      if (v >= LOOP_END) v -= LOOP_END
+      if (v < 0)         v += LOOP_END
+      useStore.getState().setScrollProgress(v)
+    },
     onComplete: () => { flightTween = null },
   })
 }
@@ -80,8 +90,12 @@ export default function ScrollDriver() {
     const nudge = (delta) => {
       if (useStore.getState().projectState !== 'idle') return
       cancelFlight()
-      const current = useStore.getState().scrollProgress
-      setProgress(Math.max(0, Math.min(1, current + delta)))
+      // The journey is a cycle: scrolling past the end (or back past the
+      // start) carries you through the return flight, modulo LOOP_END
+      let next = useStore.getState().scrollProgress + delta
+      if (next >= LOOP_END) next -= LOOP_END
+      if (next < 0) next += LOOP_END
+      setProgress(next)
       armSnap()
     }
 
