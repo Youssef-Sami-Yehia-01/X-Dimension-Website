@@ -1,7 +1,9 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { useStore } from '@/store/useStore'
 import { injectCurvature } from './curveWorld'
 
 /*
@@ -63,8 +65,12 @@ function buildGeometry() {
   return geo
 }
 
+const FADE_DUR = 3.0
+
 export default function PyramidsCloud() {
   const geometry = useMemo(() => buildGeometry(), [])
+  const fadeStart   = useRef(null)
+  const isExploring = useStore(s => s.isExploring)
 
   const material = useMemo(() => {
     // No glow sprite here: these are always 60+ units away, where sprite
@@ -75,6 +81,7 @@ export default function PyramidsCloud() {
       sizeAttenuation: true,
       vertexColors: true,
       transparent: true,
+      opacity: 0,            // revealed by the scan — never visible behind the intro
       alphaTest: 0.004,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
@@ -97,6 +104,13 @@ void main() {`
 
     return mat
   }, [])
+
+  useFrame(({ clock }) => {
+    if (isExploring && fadeStart.current === null) fadeStart.current = clock.elapsedTime
+    if (fadeStart.current !== null) {
+      material.opacity = Math.min((clock.elapsedTime - fadeStart.current) / FADE_DUR, 1)
+    }
+  })
 
   return <points geometry={geometry} material={material} />
 }

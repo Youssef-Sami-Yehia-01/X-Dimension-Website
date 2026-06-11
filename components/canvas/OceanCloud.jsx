@@ -1,8 +1,9 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { useStore } from '@/store/useStore'
 import { injectCurvature } from './curveWorld'
 import { injectMouseForce } from './mouseForce'
 import { makeGlowSprite } from './pointSprite'
@@ -19,10 +20,11 @@ import { makeGlowSprite } from './pointSprite'
  * The contact monument stands IN the water — the scan ends at the sea.
  */
 
-const COUNT   = 15000
-const Z_SHORE = -186
-const Z_FAR   = -268
-const X_SPAN  = 96
+const COUNT    = 15000
+const Z_SHORE  = -186
+const Z_FAR    = -268
+const X_SPAN   = 96
+const FADE_DUR = 3.0   // fades in once the scan begins — hidden behind the intro
 
 function buildGeometry() {
   const pos = [], col = [], glo = [], rnd = []
@@ -59,6 +61,7 @@ export default function OceanCloud() {
       map: makeGlowSprite(),
       vertexColors: true,
       transparent: true,
+      opacity: 0,            // revealed by the scan — never visible behind the intro
       alphaTest: 0.004,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
@@ -120,9 +123,17 @@ void main() {`
     return mat
   }, [])
 
+  const fadeStart   = useRef(null)
+  const isExploring = useStore(s => s.isExploring)
+
   useFrame(({ clock }) => {
     const shdr = material.userData.shader
     if (shdr) shdr.uniforms.uTime.value = clock.elapsedTime
+
+    if (isExploring && fadeStart.current === null) fadeStart.current = clock.elapsedTime
+    if (fadeStart.current !== null) {
+      material.opacity = Math.min((clock.elapsedTime - fadeStart.current) / FADE_DUR, 1)
+    }
   })
 
   return <points geometry={geometry} material={material} />

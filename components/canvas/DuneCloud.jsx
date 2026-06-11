@@ -1,12 +1,14 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { createNoise2D } from 'simplex-noise'
+import { useStore } from '@/store/useStore'
 import { injectCurvature } from './curveWorld'
 import { injectMouseForce } from './mouseForce'
 import { makeGlowSprite } from './pointSprite'
+import { sweepFrontZ, SWEEP_START_Z } from './scanTiming'
 
 /*
  * DuneCloud — the desert. TWO bands of it:
@@ -99,13 +101,15 @@ export default function DuneCloud() {
     })
 
     mat.onBeforeCompile = (shader) => {
-      shader.uniforms.uTime = { value: 0 }
+      shader.uniforms.uTime    = { value: 0 }
+      shader.uniforms.uRevealZ = { value: SWEEP_START_Z }
 
       shader.vertexShader = shader.vertexShader.replace(
         'void main() {',
         `attribute vec3  aRandVec;
 attribute float aGlow;
 uniform float   uTime;
+varying float   vWPosZ;
 void main() {`
       )
 
@@ -114,12 +118,26 @@ void main() {`
         '#include <begin_vertex>',
         `#include <begin_vertex>
         float ph = aRandVec.x * 6.2832;
-        transformed.y += sin(uTime * (0.10 + aRandVec.y * 0.12) + ph) * 0.03;`
+        transformed.y += sin(uTime * (0.10 + aRandVec.y * 0.12) + ph) * 0.03;
+        vWPosZ = transformed.z;`
       )
 
       shader.vertexShader = shader.vertexShader.replace(
         'gl_PointSize = size;',
         'gl_PointSize = size * (0.30 + aGlow * aGlow * 2.2);'
+      )
+
+      /* Sand reveals in the laser sweep's wake, like the street */
+      shader.fragmentShader = shader.fragmentShader.replace(
+        'void main() {',
+        `varying float vWPosZ;
+uniform float uRevealZ;
+void main() {`
+      )
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <alphatest_fragment>',
+        `diffuseColor.a *= smoothstep(uRevealZ - 3.0, uRevealZ + 3.0, vWPosZ);
+        #include <alphatest_fragment>`
       )
 
       injectMouseForce(shader)
@@ -130,9 +148,18 @@ void main() {`
     return mat
   }, [])
 
+  const revealStart = useRef(null)
+  const isExploring = useStore(s => s.isExploring)
+
   useFrame(({ clock }) => {
     const shdr = material.userData.shader
-    if (shdr) shdr.uniforms.uTime.value = clock.elapsedTime
+    if (!shdr) return
+    shdr.uniforms.uTime.value = clock.elapsedTime
+
+    if (isExploring && revealStart.current === null) revealStart.current = clock.elapsedTime
+    if (revealStart.current !== null) {
+      shdr.uniforms.uRevealZ.value = sweepFrontZ(clock.elapsedTime - revealStart.current)
+    }
   })
 
   return <points geometry={geometry} material={material} />

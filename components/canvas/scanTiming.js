@@ -9,7 +9,9 @@
  * One module owns the math so every element stays perfectly in sync.
  */
 
-export const SWEEP_START_Z = 32      // world Z where the front begins (behind camera)
+export const SWEEP_START_Z = 42      // world Z where the front begins — far enough behind
+                                     // the world's nearest points (z 36) that NOTHING is
+                                     // visible through the intro before the sweep fires
 export const SWEEP_END_Z   = -247    // world Z where it finishes (past the monument)
 export const SWEEP_DUR     = 4.6     // seconds for the full sweep
 

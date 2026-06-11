@@ -17,7 +17,6 @@ import MouseForceDriver from './MouseForceDriver'
 import ScanPanels3D from './ScanPanels3D'
 import SolidHeadlines from './SolidHeadlines'
 import RoadMarkings from './RoadMarkings'
-import SurveyBase from './SurveyBase'
 import BaytAlUmmaCloud from './BaytAlUmmaCloud'
 import ProjectCameraController from './ProjectCameraController'
 import styles from './Scene.module.css'
@@ -58,7 +57,6 @@ export default function Scene() {
             <ScanPanels3D />
             <SolidHeadlines />
             <RoadMarkings />
-            <SurveyBase />
           </Suspense>
         )}
 
