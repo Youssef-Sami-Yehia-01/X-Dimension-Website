@@ -16,9 +16,10 @@ import { sweepArrivalTime } from './scanTiming'
  * Data hygiene: like any real scan, the raw cloud contains stray points far
  * outside the building (a scanner-origin cluster plus scattered noise; the
  * villa itself is 257×126×58 model units inside an 800×490×58 bounding box).
- * The loader isolates the dominant cluster with a median ± k·MAD crop, then
- * densifies the kept points 7× with millimetre-scale jitter (~60k points) —
- * reads as scan noise up close, dense and solid from across the street.
+ * Two crops (median ± k·MAD cluster isolation, then a building-core box
+ * that trims the fuzzy garden vegetation), then surface-aware densification:
+ * each echo is interpolated along a segment to a neighboring point, so new
+ * points land on the actual walls and cornices rather than blurring out.
  *
  * Dot style intentionally matches CityBlocks (plain unsprited points, same
  * size, same gentle per-point drift) so the hero sits in the same visual
@@ -35,19 +36,26 @@ import { sweepArrivalTime } from './scanTiming'
  * orbit mode so the building inspects true. Distance fade is pushed out
  * beyond orbit range (the hero never dissolves while being examined).
  */
-const TARGET_HEIGHT = 14     // two-storey villa — broad presence, honest scale
+const TARGET_HEIGHT = 20     // hero scale — facade detail readable from the road
 const DATA_URL      = '/bayt-al-umma-points.bin'
 const GROW_DUR      = 2.4
-const DENSIFY       = 7      // extra jittered copies per source point (~60k total)
-const JITTER        = 0.09   // world units — scan-noise scale
+const ECHOES        = 9      // interpolated points added per source point (~56k total)
+const NEIGHBOR_R    = 14     // model units — neighbor search radius for interpolation
+const JITTER        = 0.05   // world units — residual scan-noise on echoes
 const MAD_K         = 8      // crop radius in median-absolute-deviations
+
+/* Stage-2 crop (model units): isolates the villa BUILDING from the estate.
+ * The full cluster includes the garden + boundary wall — fuzzy vegetation
+ * points that read as noise from the street. Derived from the data's
+ * density histograms: building core lives at X −800…−678, Y 393…491. */
+const CORE = { x0: -800, x1: -678, y0: 393, y1: 491 }
 
 function median(values) {
   const s = Float32Array.from(values).sort()
   return s[s.length >> 1]
 }
 
-export const BUILDING_WORLD_X = -22.5
+export const BUILDING_WORLD_X = -28
 export const BUILDING_WORLD_Z = -55
 
 const HOVER_COLOR = new THREE.Color(1.45, 1.05, 0.62)  // amber push (HDR-ish via additive)
@@ -94,6 +102,9 @@ export default function BaytAlUmmaCloud() {
             if (Math.abs(rawPos[i * 3 + a] - med[a]) > rad[a]) { ok = false; break }
           }
           if (!ok) continue
+          // Stage 2: building core only (garden vegetation trimmed)
+          const x = rawPos[i * 3], y = rawPos[i * 3 + 1]
+          if (x < CORE.x0 || x > CORE.x1 || y < CORE.y0 || y > CORE.y1) continue
           kept.push(i)
           for (let a = 0; a < 3; a++) {
             const v = rawPos[i * 3 + a]
@@ -111,24 +122,69 @@ export default function BaytAlUmmaCloud() {
         const loZ = lo[2]
         const s   = TARGET_HEIGHT / Math.max(0.001, hi[2] - lo[2])
 
-        // Densified output: each kept point + DENSIFY jittered echoes.
-        // Base sits at local Y = 0 (ground), centred on X/Z.
-        const total = kept.length * (1 + DENSIFY)
+        // ── Surface-aware densification ─────────────────────────────────
+        // The core scan is only ~5.6k points — far too sparse for a hero
+        // at this scale. Random jitter would blur it into fog; instead,
+        // every echo is interpolated along the segment to a nearby point,
+        // so new points land ON the walls, cornices and window reveals the
+        // originals describe. A spatial hash makes the neighbor search O(n).
+        const CELL = NEIGHBOR_R
+        const grid = new Map()
+        const keyOf = (x, y, z) =>
+          `${Math.floor(x / CELL)},${Math.floor(y / CELL)},${Math.floor(z / CELL)}`
+        kept.forEach((i) => {
+          const k = keyOf(rawPos[i * 3], rawPos[i * 3 + 1], rawPos[i * 3 + 2])
+          if (!grid.has(k)) grid.set(k, [])
+          grid.get(k).push(i)
+        })
+        const neighborsOf = (i) => {
+          const x = rawPos[i * 3], y = rawPos[i * 3 + 1], z = rawPos[i * 3 + 2]
+          const out = []
+          for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) for (let dz = -1; dz <= 1; dz++) {
+            const bucket = grid.get(`${Math.floor(x / CELL) + dx},${Math.floor(y / CELL) + dy},${Math.floor(z / CELL) + dz}`)
+            if (!bucket) continue
+            for (const j of bucket) {
+              if (j === i) continue
+              const ddx = rawPos[j * 3] - x, ddy = rawPos[j * 3 + 1] - y, ddz = rawPos[j * 3 + 2] - z
+              if (ddx * ddx + ddy * ddy + ddz * ddz < NEIGHBOR_R * NEIGHBOR_R) out.push(j)
+            }
+          }
+          return out
+        }
+
+        const total = kept.length * (1 + ECHOES)
         const pos = new Float32Array(total * 3)
         const col = new Float32Array(total * 3)
         const rnd = new Float32Array(total * 3)
+
+        // Model → world transform (Z-up → Y-up, base at ground, centred)
+        const toWorld = (i, t, j, out) => {
+          // lerp between source point i and neighbor j at parameter t
+          const mx = rawPos[i * 3]     + (rawPos[j * 3]     - rawPos[i * 3])     * t
+          const my = rawPos[i * 3 + 1] + (rawPos[j * 3 + 1] - rawPos[i * 3 + 1]) * t
+          const mz = rawPos[i * 3 + 2] + (rawPos[j * 3 + 2] - rawPos[i * 3 + 2]) * t
+          out[0] = (mx - cx)  * s
+          out[1] = (mz - loZ) * s
+          out[2] = (my - cy)  * s
+        }
+
         let w = 0
+        const p = [0, 0, 0]
         for (const i of kept) {
-          const bx = (rawPos[i * 3]     - cx)  * s   // length ← data X
-          const by = (rawPos[i * 3 + 2] - loZ) * s   // height ← data Z, base at 0
-          const bz = (rawPos[i * 3 + 1] - cy)  * s   // depth  ← data Y
+          const nbrs = neighborsOf(i)
           const r = rawCol[i * 3] / 255, gc = rawCol[i * 3 + 1] / 255, b = rawCol[i * 3 + 2] / 255
 
-          for (let m = 0; m <= DENSIFY; m++) {
-            const j = m === 0 ? 0 : JITTER
-            pos[w * 3]     = bx + (Math.random() - 0.5) * 2 * j
-            pos[w * 3 + 1] = by + (Math.random() - 0.5) * 2 * j
-            pos[w * 3 + 2] = bz + (Math.random() - 0.5) * 2 * j
+          for (let m = 0; m <= ECHOES; m++) {
+            if (m === 0 || nbrs.length === 0) {
+              toWorld(i, 0, i, p)
+            } else {
+              const j = nbrs[(Math.random() * nbrs.length) | 0]
+              toWorld(i, Math.random(), j, p)
+            }
+            const jit = m === 0 ? 0 : JITTER
+            pos[w * 3]     = p[0] + (Math.random() - 0.5) * 2 * jit
+            pos[w * 3 + 1] = p[1] + (Math.random() - 0.5) * 2 * jit
+            pos[w * 3 + 2] = p[2] + (Math.random() - 0.5) * 2 * jit
             // Per-echo dimming keeps the dense additive cloud from
             // saturating — lands near the city blocks' tone, hero-bright
             const dim = 0.42 + Math.random() * 0.26

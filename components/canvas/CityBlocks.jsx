@@ -14,10 +14,10 @@ import BuildingCloud from './BuildingCloud'
  * the Bayt Al-Umma villa and the heritage camera arc.
  */
 const BLOCKS = [
-  // ── Left side (framing the heritage villa) ──────────────────────────
-  // The journey now OPENS over desert (z +36…−6), so the first buildings
-  // stand at the urban fringe where the street has fully formed.
-  { position: [-15.5, 0.22,  -18], rotationY:  0.08, scale: 0.95, brightness: 1.00 },
+  // ── Left side ───────────────────────────────────────────────────────
+  // The Bayt Al-Umma estate now owns the left flank from z −25 to −85
+  // (the journey also OPENS over desert, z +36…−6), so the left side
+  // keeps a single block past the villa.
   { position: [-17.0, 0.22,  -94], rotationY: -0.04, scale: 1.10, brightness: 0.90 },
 
   // ── Right side ──────────────────────────────────────────────────────

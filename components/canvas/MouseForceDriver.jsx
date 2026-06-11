@@ -13,8 +13,8 @@ import { mouseRay, updateMouseUniforms } from './mouseForce'
  * rests. All opted-in shaders get their uniforms refreshed here, once.
  */
 
-const AMBIENT = 0.3   // resting bubble strength
-const MAX     = 1.4   // ceiling while the mouse is flying
+const AMBIENT = 0.15  // resting bubble strength
+const MAX     = 0.85  // ceiling while the mouse is flying
 
 export default function MouseForceDriver() {
   const raycaster = useRef(new THREE.Raycaster())

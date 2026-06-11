@@ -19,9 +19,9 @@ export const mouseRay = {
   strength: 0,
 }
 
-const BUBBLE_RADIUS = 7.5   // world units around the cursor ray
-const PUSH = 2.4            // max radial displacement
-const LIFT = 0.9            // max upward bulge
+const BUBBLE_RADIUS = 4.2   // world units around the cursor ray
+const PUSH = 1.0            // max radial displacement
+const LIFT = 0.3            // max upward bulge
 
 /* All shaders that opted in — uniforms refreshed once per frame */
 const registered = new Set()

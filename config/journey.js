@@ -29,13 +29,13 @@ import * as THREE from 'three'
  * the camera flows through (not between) the poses. `t` is scroll progress.
  */
 export const CAMERA_KEYFRAMES = [
-  { t: 0.00, pos: [   0, 44,   38], look: [  0,  0,  -26] }, // high over open desert — the scan begins
-  { t: 0.07, pos: [ 2.5, 22,   14], look: [ -1,  4,  -38] }, // descending as the street forms below
+  { t: 0.00, pos: [   0, 26,   36], look: [  0,  5,  -30] }, // low over the dunes — horizon ahead, the scan begins
+  { t: 0.07, pos: [ 2.5, 15,   13], look: [ -1,  4,  -40] }, // descending as the street forms below
   { t: 0.14, pos: [   0, 3.2,  -6], look: [  0, 2.4, -50] }, // touchdown — street level
   { t: 0.22, pos: [ 1.5, 2.8, -24], look: [ -1, 2.6, -68] }, // gliding down the avenue
-  { t: 0.30, pos: [ 3.5, 3.2, -34], look: [-16,  5,  -42] }, // turning toward Bayt Al-Umma
-  { t: 0.38, pos: [  -3, 5.0, -62], look: [-22,  6,  -40] }, // arcing in front of the villa
-  { t: 0.46, pos: [  -8, 7.0, -74], look: [-23,  7,  -38] }, // close three-quarter view
+  { t: 0.30, pos: [ 3.5, 3.2, -36], look: [-14,  7,  -48] }, // turning toward Bayt Al-Umma
+  { t: 0.38, pos: [   8, 6.0, -64], look: [-24, 11,  -52] }, // tracking along the great facade
+  { t: 0.46, pos: [   4, 9.0, -78], look: [-26, 13,  -58] }, // closer three-quarter view
   { t: 0.54, pos: [   2, 10,  -92], look: [ -2,  4, -130] }, // leaving the city, rising
   { t: 0.64, pos: [   8, 26, -112], look: [-12,  0, -150] }, // crane shot — desert + pyramids ahead left
   { t: 0.74, pos: [   0, 56, -130], look: [ -6, -6, -190] }, // top-down aerial — the dataset
@@ -114,7 +114,7 @@ export const SECTIONS = [
     kicker: '01 · The Scan',
     title: 'Reality,\ncaptured.',
     body: 'You are watching a laser scan in progress. X-Dimension turns Egypt’s built world — every façade, every street, every monument — into millimetre-accurate living data.',
-    panel: { position: [-13.5, 22, -2], facing: [0, 42, 30], width: 13 },
+    panel: { position: [-12, 16, -6], facing: [0, 26, 36], width: 13 },
   },
   {
     id: 'about',
@@ -136,7 +136,7 @@ export const SECTIONS = [
     body: 'The House of the Nation — home of Saad Zaghloul and a landmark of Egypt’s 1919 revolution. We documented it stone by stone in a single survey-grade point cloud, so its memory can outlast its masonry.',
     meta: 'Full documentation · survey-grade accuracy',
     cta: 'ENTER THE SCAN',
-    panel: { position: [-16, 19.5, -44], facing: [-4.7, 5.6, -73.9], width: 13 },
+    panel: { position: [-14, 25, -48], facing: [8, 6, -64], width: 13 },
   },
   {
     id: 'services',
@@ -229,8 +229,8 @@ export const SOLID_TEXTS = [
     id: 'gate',
     start: -0.01, end: 0.135,
     revealDelay: 2.8,                    // let the laser sweep pass first
-    position: [0, 13, -24],
-    rotation: [0.30, 0, 0],              // tilted up toward the descending camera
+    position: [0, 12, -24],
+    rotation: [0.16, 0, 0],              // tilted up toward the descending camera
     size: 2.5, depth: 0.55, lineGap: 1.1,
     lines: ['REALITY,', 'CAPTURED.'],
   },

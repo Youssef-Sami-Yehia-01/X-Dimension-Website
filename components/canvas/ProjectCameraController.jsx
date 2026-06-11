@@ -9,18 +9,16 @@ import { useStore } from '@/store/useStore'
 import { BUILDING_WORLD_X, BUILDING_WORLD_Z } from './BaytAlUmmaCloud'
 
 const GROUND_Y     = 0.22
-const HALF_H       = 7                // BaytAlUmmaCloud TARGET_HEIGHT / 2
+const HALF_H       = 10               // BaytAlUmmaCloud TARGET_HEIGHT / 2
 const BUILDING_CY  = GROUND_Y + HALF_H   // vertical center of cloud in world
 
 // Camera keyframes for the fly-in / fly-out.
-// The scan is a villa block (north end, around z −37) with its long garden
-// wall trailing south. Orbit focuses the villa block; the wall recedes
-// behind it as depth. Facade faces +X (toward the road).
-const FOCUS_Z = -37
-const BUILDING_CENTER = new THREE.Vector3(BUILDING_WORLD_X, BUILDING_CY, FOCUS_Z)
+// The scan is cropped to the villa building itself (gardens trimmed),
+// ~42 long × 20 tall, facade facing +X toward the road.
+const BUILDING_CENTER = new THREE.Vector3(BUILDING_WORLD_X, BUILDING_CY, BUILDING_WORLD_Z)
 const CAM_SIDE  = new THREE.Vector3(  5,  6, -40)  // road side, turned toward building
-const CAM_CLOSE = new THREE.Vector3(-10,  8, -42)  // right at the villa's face
-const CAM_ORBIT = new THREE.Vector3(  9, 13, -26)
+const CAM_CLOSE = new THREE.Vector3(  2,  9, -50)  // over the road, at the facade
+const CAM_ORBIT = new THREE.Vector3( 22, 16, -44)
 
 const SCENE_DARK = 0x060608
 const SCENE_FOG  = 0x151515
@@ -132,7 +130,7 @@ export default function ProjectCameraController() {
       makeDefault={projectState === 'showing'}
       enableDamping
       dampingFactor={0.06}
-      minDistance={12}
+      minDistance={8}
       maxDistance={170}
       minPolarAngle={0.15}
       maxPolarAngle={1.52}          /* never dive below ground level */
