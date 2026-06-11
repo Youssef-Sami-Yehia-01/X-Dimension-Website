@@ -13,6 +13,7 @@ import OceanCloud from './OceanCloud'
 import SandCloud from './SandCloud'
 import ScanSweep from './ScanSweep'
 import ScrollCamera from './ScrollCamera'
+import MouseForceDriver from './MouseForceDriver'
 import ScanPanels3D from './ScanPanels3D'
 import SolidHeadlines from './SolidHeadlines'
 import RoadMarkings from './RoadMarkings'
@@ -44,6 +45,7 @@ export default function Scene() {
       >
         <ScrollCamera />
         <ProjectCameraController />
+        <MouseForceDriver />
 
         {/* Everything below is hidden while orbiting a project */}
         {showWorld && <SandCloud />}

@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useStore } from '@/store/useStore'
 import { injectCurvature } from './curveWorld'
+import { injectMouseForce } from './mouseForce'
 
 /*
  * SandCloud — desert sand particles replacing the neutral dust atmosphere.
@@ -130,6 +131,7 @@ void main() {`
         #include <alphatest_fragment>`
       )
 
+      injectMouseForce(shader)
       injectCurvature(shader)
 
       mat.userData.shader = shader

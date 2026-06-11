@@ -5,23 +5,30 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { createNoise2D } from 'simplex-noise'
 import { injectCurvature } from './curveWorld'
+import { injectMouseForce } from './mouseForce'
 import { makeGlowSprite } from './pointSprite'
 
 /*
- * DuneCloud — the desert zone (z −96 … −196).
+ * DuneCloud — the desert. TWO bands of it:
  *
- * As the city falls away, simplex-noise dunes roll out on both sides of the
- * road: low and flat near the shoulder, building to ridges further out.
- * Density ramps in over the first few metres so the transition from
- * pavement to sand is seamless rather than a hard line.
+ *   · the OPENING desert (z +36 … −6): the journey begins over open sand;
+ *     near the start the dunes wash right across where the road will be,
+ *     clearing as the street condenses out of the desert (see the matching
+ *     morph in StreetCloud)
+ *   · the MID-journey desert (z −96 … −196) between the city and the coast
+ *
+ * Simplex dunes: low and flat near the road shoulder, ridges further out.
+ * Density ramps at every zone edge so transitions read as morphs, not seams.
  */
 
-const COUNT     = 16000
-const Z_START   = -96
-const Z_END     = -196
-const X_INNER   = 8      // desert begins just past the road shoulder
-const X_OUTER   = 92
-const AMP       = 5.2    // ridge height
+const X_INNER = 8      // dunes begin just past the road shoulder
+const X_OUTER = 92
+const AMP     = 5.2    // ridge height
+
+const BANDS = [
+  { z0:  36, z1:   -6, count:  8000, opening: true },
+  { z0: -96, z1: -196, count: 16000, opening: false },
+]
 
 function buildGeometry() {
   const noise  = createNoise2D(() => 0.4213)   // deterministic — stable dunes
@@ -29,29 +36,43 @@ function buildGeometry() {
 
   const pos = [], col = [], glo = [], rnd = []
 
-  for (let i = 0; i < COUNT; i++) {
-    const side = Math.random() < 0.5 ? -1 : 1
-    const x = side * (X_INNER + Math.pow(Math.random(), 1.25) * (X_OUTER - X_INNER))
-    const z = Z_START - Math.random() * (Z_START - Z_END)
+  for (const band of BANDS) {
+    for (let i = 0; i < band.count; i++) {
+      const z = band.z0 - Math.random() * (band.z0 - band.z1)
+      let x
 
-    // Soft density ramp into the city zone
-    if (z > Z_START - 10 && Math.random() > (Z_START - z) / 10) continue
+      if (band.opening) {
+        x = (Math.random() - 0.5) * X_OUTER * 2
+        // Over the road corridor, sand only persists far back where the
+        // street hasn't formed yet (StreetCloud's morph zone is z 4…26)
+        if (Math.abs(x) < 7 && (z < 8 || Math.random() > (z - 8) / 28)) continue
+      } else {
+        const side = Math.random() < 0.5 ? -1 : 1
+        x = side * (X_INNER + Math.pow(Math.random(), 1.25) * (X_OUTER - X_INNER))
+        // Soft density ramp into the city zone
+        if (z > band.z0 - 10 && Math.random() > (band.z0 - z) / 10) continue
+      }
 
-    // Dunes flatten toward the road, rise away from it
-    const lift  = THREE.MathUtils.smoothstep(Math.abs(x), X_INNER, 34)
-    const ridge = (noise(x * 0.022, z * 0.022) * 0.5 + 0.5) * AMP
-    const grain = noise2(x * 0.14, z * 0.14) * 0.5
-    const y = 0.1 + lift * ridge + grain * lift
+      // Both bands fade out softly at their city-side edge
+      if (z < band.z1 + 8 && Math.random() > (z - band.z1) / 8) continue
 
-    pos.push(x, y, z)
+      // Dunes flatten toward the road, rise away from it
+      let lift = THREE.MathUtils.smoothstep(Math.abs(x), X_INNER, 34)
+      if (band.opening) lift = Math.max(lift, 0.14)   // low sand wash everywhere
+      const ridge = (noise(x * 0.022, z * 0.022) * 0.5 + 0.5) * AMP
+      const grain = noise2(x * 0.14, z * 0.14) * 0.5
+      const y = 0.1 + lift * ridge + grain * lift
 
-    // Warm sand, brighter on ridge crests; rare glinting grains
-    const g = Math.pow(Math.random(), 2.6)
-    const crest = 0.55 + (y / AMP) * 0.45
-    const b = Math.min(1, crest * (0.35 + g * g * 2.4))
-    col.push(b * 0.86, b * 0.72, b * 0.52)
-    glo.push(g)
-    rnd.push(Math.random(), Math.random(), Math.random())
+      pos.push(x, y, z)
+
+      // Warm sand, brighter on ridge crests; rare glinting grains
+      const g = Math.pow(Math.random(), 2.6)
+      const crest = 0.55 + (y / AMP) * 0.45
+      const b = Math.min(1, crest * (0.35 + g * g * 2.4))
+      col.push(b * 0.86, b * 0.72, b * 0.52)
+      glo.push(g)
+      rnd.push(Math.random(), Math.random(), Math.random())
+    }
   }
 
   const geo = new THREE.BufferGeometry()
@@ -101,6 +122,7 @@ void main() {`
         'gl_PointSize = size * (0.30 + aGlow * aGlow * 2.2);'
       )
 
+      injectMouseForce(shader)
       injectCurvature(shader)
       mat.userData.shader = shader
     }

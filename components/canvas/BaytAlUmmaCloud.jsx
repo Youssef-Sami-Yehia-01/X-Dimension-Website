@@ -17,8 +17,12 @@ import { sweepArrivalTime } from './scanTiming'
  * outside the building (a scanner-origin cluster plus scattered noise; the
  * villa itself is 257×126×58 model units inside an 800×490×58 bounding box).
  * The loader isolates the dominant cluster with a median ± k·MAD crop, then
- * densifies the kept points 4× with millimetre-scale jitter — reads as scan
- * noise up close, and keeps the hero visible from across the street.
+ * densifies the kept points 7× with millimetre-scale jitter (~60k points) —
+ * reads as scan noise up close, dense and solid from across the street.
+ *
+ * Dot style intentionally matches CityBlocks (plain unsprited points, same
+ * size, same gentle per-point drift) so the hero sits in the same visual
+ * family as the rest of the skyline — just denser and a touch brighter.
  *
  * Interactions
  *   · hover  — the cloud warms toward laser-amber + cursor becomes pointer
@@ -34,8 +38,8 @@ import { sweepArrivalTime } from './scanTiming'
 const TARGET_HEIGHT = 14     // two-storey villa — broad presence, honest scale
 const DATA_URL      = '/bayt-al-umma-points.bin'
 const GROW_DUR      = 2.4
-const DENSIFY       = 4      // extra jittered copies per source point
-const JITTER        = 0.11   // world units — scan-noise scale
+const DENSIFY       = 7      // extra jittered copies per source point (~60k total)
+const JITTER        = 0.09   // world units — scan-noise scale
 const MAD_K         = 8      // crop radius in median-absolute-deviations
 
 function median(values) {
@@ -48,20 +52,6 @@ export const BUILDING_WORLD_Z = -55
 
 const HOVER_COLOR = new THREE.Color(1.45, 1.05, 0.62)  // amber push (HDR-ish via additive)
 const IDLE_COLOR  = new THREE.Color(1, 1, 1)
-
-function makeSprite() {
-  const s = 32
-  const canvas = document.createElement('canvas')
-  canvas.width = s; canvas.height = s
-  const ctx = canvas.getContext('2d'), half = s / 2
-  const g = ctx.createRadialGradient(half, half, 0, half, half, half)
-  g.addColorStop(0.00, 'rgba(255,255,252,1.0)')
-  g.addColorStop(0.20, 'rgba(248,244,235,0.78)')
-  g.addColorStop(0.50, 'rgba(220,215,200,0.18)')
-  g.addColorStop(1.00, 'rgba(0,0,0,0)')
-  ctx.fillStyle = g; ctx.fillRect(0, 0, s, s)
-  return new THREE.CanvasTexture(canvas)
-}
 
 export default function BaytAlUmmaCloud() {
   const { gl } = useThree()
@@ -126,7 +116,7 @@ export default function BaytAlUmmaCloud() {
         const total = kept.length * (1 + DENSIFY)
         const pos = new Float32Array(total * 3)
         const col = new Float32Array(total * 3)
-        const glo = new Float32Array(total)
+        const rnd = new Float32Array(total * 3)
         let w = 0
         for (const i of kept) {
           const bx = (rawPos[i * 3]     - cx)  * s   // length ← data X
@@ -139,11 +129,11 @@ export default function BaytAlUmmaCloud() {
             pos[w * 3]     = bx + (Math.random() - 0.5) * 2 * j
             pos[w * 3 + 1] = by + (Math.random() - 0.5) * 2 * j
             pos[w * 3 + 2] = bz + (Math.random() - 0.5) * 2 * j
-            // Per-echo dimming keeps the densified cloud from saturating
-            // under additive blending; rare bright "stars" via aGlow
-            const dim = 0.5 + Math.random() * 0.3
+            // Per-echo dimming keeps the dense additive cloud from
+            // saturating — lands near the city blocks' tone, hero-bright
+            const dim = 0.42 + Math.random() * 0.26
             col[w * 3] = r * dim; col[w * 3 + 1] = gc * dim; col[w * 3 + 2] = b * dim
-            glo[w] = Math.pow(Math.random(), 2.6)
+            rnd[w * 3] = Math.random(); rnd[w * 3 + 1] = Math.random(); rnd[w * 3 + 2] = Math.random()
             w++
           }
         }
@@ -151,23 +141,21 @@ export default function BaytAlUmmaCloud() {
         const g = new THREE.BufferGeometry()
         g.setAttribute('position', new THREE.BufferAttribute(pos, 3))
         g.setAttribute('color',    new THREE.BufferAttribute(col, 3))
-        g.setAttribute('aGlow',    new THREE.BufferAttribute(glo, 1))
+        g.setAttribute('aRandVec', new THREE.BufferAttribute(rnd, 3))
         g.computeBoundingSphere()
         setGeo(g)
       })
     return () => { cancelled = true }
   }, [])
 
-  const sprite = useMemo(() => makeSprite(), [])
-
   const material = useMemo(() => {
+    /* Same dot recipe as BuildingCloud: plain unsprited points, size 0.18 */
     const mat = new THREE.PointsMaterial({
-      map: sprite,
-      size: 0.21,
+      size: 0.18,
       vertexColors: true,
       transparent: true,
       opacity: 0.9,
-      alphaTest: 0.004,
+      alphaTest: 0.01,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       sizeAttenuation: true,
@@ -175,23 +163,39 @@ export default function BaytAlUmmaCloud() {
     })
 
     mat.onBeforeCompile = (shader) => {
+      shader.uniforms.uTime    = { value: 0 }
       shader.uniforms.uRevealY = { value: -1.5 }
 
       shader.vertexShader = shader.vertexShader.replace(
         'void main() {',
-        `attribute float aGlow;
+        `attribute vec3 aRandVec;
+uniform float uTime;
 varying float vLocalY;
 void main() {`
       )
+      /* Identical gentle per-point drift to the city blocks */
       shader.vertexShader = shader.vertexShader.replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
+        float phX = aRandVec.x * 6.2832;
+        float spX = 0.10 + aRandVec.x * 0.15;
+        float amX = 0.015 + aRandVec.x * 0.025;
+        transformed.x += sin(uTime * spX          + phX) * amX
+                       + sin(uTime * spX * 1.6180 + phX * 1.7) * amX * 0.5;
+
+        float phY = aRandVec.y * 6.2832;
+        float spY = 0.10 + aRandVec.y * 0.15;
+        float amY = 0.015 + aRandVec.y * 0.025;
+        transformed.y += sin(uTime * spY          + phY) * amY
+                       + sin(uTime * spY * 1.6180 + phY * 1.7) * amY * 0.5;
+
+        float phZ = aRandVec.z * 6.2832;
+        float spZ = 0.10 + aRandVec.z * 0.15;
+        float amZ = 0.015 + aRandVec.z * 0.025;
+        transformed.z += sin(uTime * spZ          + phZ) * amZ
+                       + sin(uTime * spZ * 1.6180 + phZ * 1.7) * amZ * 0.5;
+
         vLocalY = transformed.y;`
-      )
-      /* Mostly small points with rare bright stars — the laser-scan sparkle */
-      shader.vertexShader = shader.vertexShader.replace(
-        'gl_PointSize = size;',
-        'gl_PointSize = size * (0.45 + aGlow * aGlow * 2.6);'
       )
 
       shader.fragmentShader = shader.fragmentShader.replace(
@@ -213,10 +217,10 @@ void main() {`
     }
 
     return mat
-  }, [sprite])
+  }, [])
 
   useEffect(() => () => geo?.dispose(), [geo])
-  useEffect(() => () => { sprite.dispose(); material.dispose() }, [sprite, material])
+  useEffect(() => () => material.dispose(), [material])
 
   useEffect(() => {
     const canHover = projectState === 'idle'
@@ -226,6 +230,7 @@ void main() {`
 
   useFrame(({ clock }, delta) => {
     const shdr = material.userData.shader
+    if (shdr) shdr.uniforms.uTime.value = clock.elapsedTime
 
     // Bottom-up growth, synced to the opening laser sweep
     if (isExploring && revealStart.current === null) {
@@ -253,8 +258,8 @@ void main() {`
   if (!geo) return null
 
   return (
-    /* Rotated 90°: the facade's 65-unit length runs along the street (z −22…−88),
-       its face turned toward the road. */
+    /* Rotated 90°: the villa's length runs along the street (block ≈ z −24…−49,
+       garden wall trailing to −86), its face turned toward the road. */
     <group
       position={[BUILDING_WORLD_X, 0.22, BUILDING_WORLD_Z]}
       rotation={[0, Math.PI / 2, 0]}

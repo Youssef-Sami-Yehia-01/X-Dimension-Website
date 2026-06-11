@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { injectCurvature } from './curveWorld'
+import { injectMouseForce } from './mouseForce'
 import { makeGlowSprite } from './pointSprite'
 
 /*
@@ -76,15 +77,17 @@ varying float   vCrest;
 void main() {`
       )
 
-      /* Two crossing wave fields + per-point phase; crest passed to frag */
+      /* Two crossing wave fields + a long swell; crest passed to frag.
+         Amplitudes match StreetCloud's shoreline morph so the road points
+         and the sea points ride the same water. */
       shader.vertexShader = shader.vertexShader.replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
         float ph = aRandVec.x * 6.2832;
-        float w1 = sin(position.x * 0.20 + uTime * 0.85 + ph);
-        float w2 = sin(position.z * 0.15 - uTime * 0.62 + ph * 0.6);
+        float w1 = sin(position.x * 0.20 + uTime * 0.85 + ph * 0.25);
+        float w2 = sin(position.z * 0.15 - uTime * 0.62 + ph * 0.15);
         float w3 = sin((position.x + position.z) * 0.07 + uTime * 0.38);
-        transformed.y += w1 * 0.20 + w2 * 0.24 + w3 * 0.30;
+        transformed.y += w1 * 0.45 + w2 * 0.50 + w3 * 0.55;
         vCrest  = (w1 + w2 + w3) / 3.0;
         vShoreZ = position.z;`
       )
@@ -109,6 +112,7 @@ void main() {`
         #include <alphatest_fragment>`
       )
 
+      injectMouseForce(shader)
       injectCurvature(shader)
       mat.userData.shader = shader
     }

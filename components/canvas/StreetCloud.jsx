@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useStore } from '@/store/useStore'
 import { injectCurvature } from './curveWorld'
+import { injectMouseForce } from './mouseForce'
 import { sweepFrontZ, SWEEP_START_Z } from './scanTiming'
 
 /* ── Street dimensions ──────────────────────────────────────────────────── */
@@ -204,6 +205,8 @@ export default function StreetCloud() {
 attribute float aGlow;
 uniform float   uTime;
 varying float   vWPosZ;
+varying float   vMorphSand;
+varying float   vMorphSea;
 void main() {`
       )
 
@@ -229,6 +232,24 @@ void main() {`
         transformed.z += sin(uTime * spZ          + phZ) * amZ
                        + sin(uTime * spZ * 1.618   + phZ * 1.7) * amZ * 0.5;
 
+        /* Desert → street morph at the journey's start: the road literally
+           condenses out of scattered dune sand as z approaches the city */
+        float morphSand = smoothstep(4.0, 26.0, transformed.z);
+        transformed.x += morphSand * (aRandVec.x - 0.5) * 8.0;
+        transformed.y += morphSand * (0.3 + aRandVec.y * 2.4);
+        transformed.z += morphSand * (aRandVec.z - 0.5) * 6.0;
+        vMorphSand = morphSand;
+
+        /* Street → ocean morph at the shoreline: the same points pick up
+           the sea's wave motion and dissolve into water */
+        float morphSea = smoothstep(174.0, 196.0, -transformed.z);
+        float mw1 = sin(transformed.x * 0.20 + uTime * 0.85);
+        float mw2 = sin(transformed.z * 0.15 - uTime * 0.62);
+        float mw3 = sin((transformed.x + transformed.z) * 0.07 + uTime * 0.38);
+        transformed.y += morphSea * (mw1 * 0.45 + mw2 * 0.50 + mw3 * 0.55 + 0.25);
+        transformed.x += morphSea * (aRandVec.y - 0.5) * 5.0;
+        vMorphSea = morphSea;
+
         vWPosZ = transformed.z;`
       )
 
@@ -247,19 +268,29 @@ void main() {`
       shader.fragmentShader = shader.fragmentShader.replace(
         'void main() {',
         `varying float vWPosZ;
+varying float vMorphSand;
+varying float vMorphSea;
 uniform float uRevealZ;
 void main() {`
       )
 
-      /* Near-to-far reveal — tight feather so points appear AT the beam */
+      /* Near-to-far reveal + zone tinting: cream street, sand at the
+         desert end, sea-blue at the shoreline (luminance preserved so the
+         bright "stars" survive the tint) */
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <alphatest_fragment>',
         `float revealFactor = smoothstep(uRevealZ - 3.0, uRevealZ + 3.0, vWPosZ);
         diffuseColor.a *= revealFactor;
+
+        float lum = dot(diffuseColor.rgb, vec3(0.3333));
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.86, 0.70, 0.50) * (lum * 2.3 + 0.04), vMorphSand);
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.45, 0.62, 0.80) * (lum * 2.5 + 0.04), vMorphSea);
         #include <alphatest_fragment>`
       )
 
-      /* Spherical-world bend (must come after the edits above) */
+      /* Cursor force field, then the spherical-world bend (order matters:
+         both rewrite the projection chain) */
+      injectMouseForce(shader)
       injectCurvature(shader)
 
       mat.userData.shader = shader

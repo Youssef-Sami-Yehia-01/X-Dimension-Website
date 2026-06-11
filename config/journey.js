@@ -29,8 +29,8 @@ import * as THREE from 'three'
  * the camera flows through (not between) the poses. `t` is scroll progress.
  */
 export const CAMERA_KEYFRAMES = [
-  { t: 0.00, pos: [   0, 42,   30], look: [  0,  0,  -28] }, // high aerial — the scan begins
-  { t: 0.07, pos: [ 2.5, 22,   12], look: [ -1,  4,  -38] }, // descending
+  { t: 0.00, pos: [   0, 44,   38], look: [  0,  0,  -26] }, // high over open desert — the scan begins
+  { t: 0.07, pos: [ 2.5, 22,   14], look: [ -1,  4,  -38] }, // descending as the street forms below
   { t: 0.14, pos: [   0, 3.2,  -6], look: [  0, 2.4, -50] }, // touchdown — street level
   { t: 0.22, pos: [ 1.5, 2.8, -24], look: [ -1, 2.6, -68] }, // gliding down the avenue
   { t: 0.30, pos: [ 3.5, 3.2, -34], look: [-16,  5,  -42] }, // turning toward Bayt Al-Umma

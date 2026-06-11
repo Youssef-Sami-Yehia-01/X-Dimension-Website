@@ -15,13 +15,15 @@ import BuildingCloud from './BuildingCloud'
  */
 const BLOCKS = [
   // ── Left side (framing the heritage villa) ──────────────────────────
-  { position: [-15.5, 0.22,  -14], rotationY:  0.08, scale: 0.95, brightness: 1.00 },
+  // The journey now OPENS over desert (z +36…−6), so the first buildings
+  // stand at the urban fringe where the street has fully formed.
+  { position: [-15.5, 0.22,  -18], rotationY:  0.08, scale: 0.95, brightness: 1.00 },
   { position: [-17.0, 0.22,  -94], rotationY: -0.04, scale: 1.10, brightness: 0.90 },
 
   // ── Right side ──────────────────────────────────────────────────────
-  { position: [ 15.5, 0.22,  -12], rotationY:  0.05, scale: 0.90, brightness: 1.00 },
-  { position: [ 15.0, 0.22,  -38], rotationY:  0.05, scale: 0.95, brightness: 1.00 },
-  { position: [ 16.5, 0.22,  -66], rotationY: -0.08, scale: 1.20, brightness: 0.80 },
+  { position: [ 15.5, 0.22,  -20], rotationY:  0.05, scale: 0.90, brightness: 1.00 },
+  { position: [ 15.0, 0.22,  -42], rotationY:  0.05, scale: 0.95, brightness: 1.00 },
+  { position: [ 16.5, 0.22,  -68], rotationY: -0.08, scale: 1.20, brightness: 0.80 },
   { position: [ 14.5, 0.22,  -96], rotationY:  0.03, scale: 1.00, brightness: 1.05 },
 ]
 
