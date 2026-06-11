@@ -10,7 +10,7 @@ body {
   height: 100%;
   background: #151515;
   color: #fff;
-  overflow: hidden;
+  overflow: hidden;   /* wheel events drive the 3D journey — no DOM scrolling */
   font-family: 'Space Grotesk', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }

@@ -48,11 +48,12 @@ export default function IntroScreen() {
   }, [])
 
   const handleClick = () => {
+    // Fly THROUGH the logo into the world; setExploring fires the laser sweep
     const tl = gsap.timeline({ onComplete: setExploring })
 
     tl.to(logoRef.current, {
       scale: 9, opacity: 0, filter: 'blur(16px)',
-      duration: 3.0, ease: 'power2.in',
+      duration: 2.2, ease: 'power2.in',
     })
 
     tl.to(hintRef.current,
@@ -60,7 +61,7 @@ export default function IntroScreen() {
     )
 
     tl.to(overlayRef.current,
-      { opacity: 0, duration: 2.0, ease: 'power1.inOut' }, '-=1.2'
+      { opacity: 0, duration: 1.5, ease: 'power1.inOut' }, '-=1.0'
     )
   }
 
@@ -73,7 +74,7 @@ export default function IntroScreen() {
       </div>
 
       {/* Cursor-following text at z-index 2 */}
-      <p ref={hintRef} className={styles.hint}>Click to explore</p>
+      <p ref={hintRef} className={styles.hint}>Click to initiate scan</p>
 
     </div>
   )

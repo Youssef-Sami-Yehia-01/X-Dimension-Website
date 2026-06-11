@@ -1,16 +1,24 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
-import {
-  FaFacebook,
-  FaInstagram,
-  FaLinkedin,
-} from 'react-icons/fa6'
+import { FaFacebook, FaInstagram, FaLinkedin } from 'react-icons/fa6'
 import { MdEmail } from 'react-icons/md'
+import { useStore } from '@/store/useStore'
+import { SECTIONS, sectionAt } from '@/config/journey'
+import { flyTo } from './ScrollDriver'
 import styles from './SiteUI.module.css'
 
-const NAV_ITEMS = ['About', 'Services', 'Projects', 'Careers']
+/*
+ * SiteUI — the persistent HUD chrome around the journey.
+ *
+ *   top-left      logo (click = fly home)
+ *   right edge    journey rail: one tick per narrative beat, with a live
+ *                 progress fill; clicking a tick flies the camera there
+ *                 along the road (see ScrollDriver.flyTo)
+ *   bottom-right  social links
+ *   bottom-center scroll hint, fades out after the first real scroll
+ */
 
 const SOCIAL = [
   { icon: FaFacebook,  label: 'Facebook',  href: '#' },
@@ -19,53 +27,92 @@ const SOCIAL = [
   { icon: MdEmail,     label: 'Email',     href: 'mailto:info@xdimension.co' },
 ]
 
-export default function SiteUI() {
+export default function SiteUI({ hidden = false }) {
   const logoRef   = useRef()
-  const navRef    = useRef()
+  const railRef   = useRef()
   const socialRef = useRef()
+  const hintRef   = useRef()
+  const fillRef   = useRef()
 
-  /* Entrance animation — staggered fade-in from each edge */
+  // Re-render only when the active beat changes
+  const activeId = useStore(s => sectionAt(s.scrollProgress).id)
+  const [hintDismissed, setHintDismissed] = useState(false)
+
+  /* Entrance animation — HUD assembles from the edges */
   useEffect(() => {
-    const tl = gsap.timeline({ delay: 0.1 })
+    const tl = gsap.timeline({ delay: 0.2 })
 
     tl.fromTo(logoRef.current,
       { opacity: 0, x: -20 },
       { opacity: 1, x: 0, duration: 0.7, ease: 'power2.out' }
     )
-
-    tl.fromTo(navRef.current.querySelectorAll('a'),
-      { opacity: 0, x: -16 },
-      { opacity: 1, x: 0,  duration: 0.5, ease: 'power2.out', stagger: 0.08 },
+    tl.fromTo(railRef.current.querySelectorAll('button'),
+      { opacity: 0, x: 14 },
+      { opacity: 1, x: 0, duration: 0.5, ease: 'power2.out', stagger: 0.06 },
       '-=0.3'
     )
-
     tl.fromTo(socialRef.current.querySelectorAll('a'),
-      { opacity: 0, x: 16 },
-      { opacity: 1, x: 0,  duration: 0.5, ease: 'power2.out', stagger: 0.07 },
+      { opacity: 0, y: 10 },
+      { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out', stagger: 0.07 },
       '<'
+    )
+    tl.fromTo(hintRef.current,
+      { opacity: 0 },
+      { opacity: 1, duration: 0.8 },
+      '-=0.2'
     )
 
     return () => tl.kill()
   }, [])
 
+  /* Progress fill + hint dismissal — direct DOM writes, no re-renders */
+  useEffect(() => {
+    const unsub = useStore.subscribe((state) => {
+      if (fillRef.current) {
+        fillRef.current.style.transform = `scaleY(${state.scrollProgress})`
+      }
+      if (!hintDismissed && state.scrollProgress > 0.03) {
+        setHintDismissed(true)
+      }
+    })
+    return unsub
+  }, [hintDismissed])
+
+  useEffect(() => {
+    if (hintDismissed && hintRef.current) {
+      gsap.to(hintRef.current, { opacity: 0, duration: 0.6, ease: 'power2.out' })
+    }
+  }, [hintDismissed])
+
   return (
-    <>
-      {/* ── Top-left: logo only ───────────────────────────────────── */}
+    /* Chrome stays mounted across project open/close (entrance plays once);
+       it just fades + ignores the pointer while a project is open. */
+    <div className={`${styles.chrome} ${hidden ? styles.chromeHidden : ''}`}>
+      {/* ── Top-left: logo (fly home) ─────────────────────────────── */}
       <div ref={logoRef} className={styles.topLeft}>
-        <img src="/logo-white.svg" alt="X-Dimension" width={54} height={54} className={styles.topLogo} />
+        <button className={styles.logoBtn} onClick={() => flyTo(0)} aria-label="Back to start">
+          <img src="/logo-white.svg" alt="X-Dimension" width={54} height={54} className={styles.topLogo} />
+        </button>
       </div>
 
-      {/* ── Bottom-left: navigation ────────────────────────────────── */}
-      <nav ref={navRef} className={styles.bottomLeft}>
-        {NAV_ITEMS.map(item => (
-          <a key={item} href="#" className={styles.navItem}>
-            <span className={styles.navLine} />
-            {item}
-          </a>
+      {/* ── Right edge: journey rail ──────────────────────────────── */}
+      <nav ref={railRef} className={styles.rail} aria-label="Journey sections">
+        <div className={styles.railTrack}>
+          <div ref={fillRef} className={styles.railFill} />
+        </div>
+        {SECTIONS.map((section) => (
+          <button
+            key={section.id}
+            className={`${styles.railItem} ${section.id === activeId ? styles.railActive : ''}`}
+            onClick={() => flyTo(section.focus)}
+          >
+            <span className={styles.railLabel}>{section.label}</span>
+            <span className={styles.railTick} />
+          </button>
         ))}
       </nav>
 
-      {/* ── Bottom-right: social icons ─────────────────────────────── */}
+      {/* ── Bottom-right: social icons ────────────────────────────── */}
       <div ref={socialRef} className={styles.bottomRight}>
         {SOCIAL.map(({ icon: Icon, label, href }) => (
           <a
@@ -80,6 +127,12 @@ export default function SiteUI() {
           </a>
         ))}
       </div>
-    </>
+
+      {/* ── Bottom-center: scroll hint ────────────────────────────── */}
+      <div ref={hintRef} className={styles.hint}>
+        <span className={styles.hintMouse}><span className={styles.hintWheel} /></span>
+        Scroll to travel the scan
+      </div>
+    </div>
   )
 }

@@ -12,7 +12,26 @@
       "PowerShell(python -c \"import pyassimp; print\\(pyassimp.__version__\\)\" 2>&1)",
       "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"C:\\\\Users\\\\youss\\\\Downloads\\\\old-japanese-store-lowpoly\\\\source\\\\extracted\\\\japanese store.fbx\"\\); [System.Text.Encoding]::ASCII.GetString\\($bytes[0..20]\\))",
       "Read(//mnt/d/Youssef/Work/X-Dimension/**)",
-      "PowerShell(ls \"D:\\\\Youssef\\\\Work\\\\X-Dimension\\\\X-Dimension Website\\\\public\" 2>$null; if \\(-not \\(Test-Path \"D:\\\\Youssef\\\\Work\\\\X-Dimension\\\\X-Dimension Website\\\\public\"\\)\\) { New-Item -ItemType Directory -Path \"D:\\\\Youssef\\\\Work\\\\X-Dimension\\\\X-Dimension Website\\\\public\" })"
+      "PowerShell(ls \"D:\\\\Youssef\\\\Work\\\\X-Dimension\\\\X-Dimension Website\\\\public\" 2>$null; if \\(-not \\(Test-Path \"D:\\\\Youssef\\\\Work\\\\X-Dimension\\\\X-Dimension Website\\\\public\"\\)\\) { New-Item -ItemType Directory -Path \"D:\\\\Youssef\\\\Work\\\\X-Dimension\\\\X-Dimension Website\\\\public\" })",
+      "PowerShell(cd \"D:\\\\Youssef\\\\Work\\\\X-Dimension\\\\X-Dimension Website\"; Get-ChildItem public -File | Select-Object Name, @{N='MB';E={[math]::Round\\($_.Length/1MB,2\\)}} | Sort-Object MB -Descending)",
+      "WebSearch",
+      "Bash(Get-ChildItem -Path \"D:\\\\Youssef\\\\Work\\\\X-Dimension\\\\X-Dimension Website\" -Force)",
+      "Bash(Select-Object Name, Mode)",
+      "Bash(npm run *)",
+      "Bash(node *)",
+      "Bash(taskkill *)",
+      "PowerShell(Stop-Process *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(curl -s -m 5 http://localhost:3000)",
+      "Skill(run)",
+      "Bash(powershell *)",
+      "Bash(curl -s http://localhost:3000 -o /dev/null -w \"%{http_code}\")",
+      "PowerShell(Get-ChildItem -Recurse -File -Exclude node_modules | Where-Object { $_.FullName -notmatch 'node_modules|\\\\.next|\\\\.git' } | Select-Object -ExpandProperty FullName)",
+      "PowerShell($j = Get-Content \"public\\\\bayt-al-umma-points.json\" -TotalCount 1 -Encoding UTF8; $j.Substring\\(0, 400\\); $b = Get-Content \"public\\\\building-points.json\" -TotalCount 1 -Encoding UTF8; $b.Substring\\(0, 300\\))",
+      "PowerShell(New-Item -ItemType Directory -Force tools\\\\data)",
+      "PowerShell(Move-Item public\\\\building-points.json tools\\\\data\\\\)",
+      "PowerShell(Move-Item public\\\\bayt-al-umma-points.json tools\\\\data\\\\)",
+      "PowerShell(node tools\\\\convert-points-to-bin.mjs)"
     ]
   }
 }

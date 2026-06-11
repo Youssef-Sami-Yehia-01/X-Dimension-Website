@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useStore } from '@/store/useStore'
 import { injectCurvature } from './curveWorld'
+import { sweepFrontZ, SWEEP_START_Z } from './scanTiming'
 
 /* ── Street dimensions ──────────────────────────────────────────────────── */
 const HALF_ROAD  = 3.5    // half road width → total road = 7 units (2 lanes)
@@ -13,8 +14,8 @@ const CURB_W     = 0.18
 const SWALK_W    = 60.0   // very wide pavements
 const SWALK_Y    = 0.22
 const Z_NEAR     = 30
-const Z_FAR      = -200
-const Z_RANGE    = Z_NEAR - Z_FAR   // 230 units
+const Z_FAR      = -245   // street runs past the contact monument at -234
+const Z_RANGE    = Z_NEAR - Z_FAR   // 275 units
 
 /* ── Warm off-white tint ─────────────────────────────────────────────────
  * R:G:B = 1 : 0.93 : 0.84  →  pure white becomes a warm cream/beige.
@@ -23,10 +24,7 @@ const TINT_R = 1.00
 const TINT_G = 0.97
 const TINT_B = 0.93
 
-/* ── Reveal ─────────────────────────────────────────────────────────────── */
-const REVEAL_START = Z_NEAR + 2
-const REVEAL_END   = Z_FAR  - 2
-const REVEAL_DUR   = 3.5
+/* Reveal front rides the shared scan sweep (see scanTiming.js) */
 
 /* -------------------------------------------------------------------------- */
 
@@ -175,7 +173,7 @@ export default function StreetCloud() {
 
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uTime    = { value: 0 }
-      shader.uniforms.uRevealZ = { value: REVEAL_START }
+      shader.uniforms.uRevealZ = { value: SWEEP_START_Z }
 
       /* ── Vertex ──────────────────────────────────────────────────── */
       shader.vertexShader = shader.vertexShader.replace(
@@ -231,10 +229,10 @@ uniform float uRevealZ;
 void main() {`
       )
 
-      /* Near-to-far reveal */
+      /* Near-to-far reveal — tight feather so points appear AT the beam */
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <alphatest_fragment>',
-        `float revealFactor = smoothstep(uRevealZ - 8.0, uRevealZ + 8.0, vWPosZ);
+        `float revealFactor = smoothstep(uRevealZ - 3.0, uRevealZ + 3.0, vWPosZ);
         diffuseColor.a *= revealFactor;
         #include <alphatest_fragment>`
       )
@@ -257,8 +255,7 @@ void main() {`
     }
 
     if (revealStart.current !== null) {
-      const eased = 1 - Math.pow(1 - Math.min((clock.elapsedTime - revealStart.current) / REVEAL_DUR, 1), 3)
-      shdr.uniforms.uRevealZ.value = REVEAL_START + (REVEAL_END - REVEAL_START) * eased
+      shdr.uniforms.uRevealZ.value = sweepFrontZ(clock.elapsedTime - revealStart.current)
     }
 
     shdr.uniforms.uTime.value = clock.elapsedTime

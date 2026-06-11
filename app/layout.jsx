@@ -1,8 +1,15 @@
 import './globals.css'
 
 export const metadata = {
-  title: 'X-Dimension',
-  description: 'Laser Scanning & BIM Engineering',
+  title: 'X-Dimension — Reality, Captured',
+  description:
+    'X-Dimension turns Egypt’s built world into millimetre-accurate data. ' +
+    '3D laser scanning, Scan-to-BIM, heritage documentation and as-built drawings, from Cairo.',
+  icons: { icon: '/logo-white.svg' },
+  openGraph: {
+    title: 'X-Dimension — Reality, Captured',
+    description: 'Laser scanning & BIM engineering for Egypt’s built world.',
+  },
 }
 
 export default function RootLayout({ children }) {
