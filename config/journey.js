@@ -33,15 +33,15 @@ export const CAMERA_KEYFRAMES = [
   { t: 0.07, pos: [ 2.5, 22,   12], look: [ -1,  4,  -38] }, // descending
   { t: 0.14, pos: [   0, 3.2,  -6], look: [  0, 2.4, -50] }, // touchdown — street level
   { t: 0.22, pos: [ 1.5, 2.8, -24], look: [ -1, 2.6, -68] }, // gliding down the avenue
-  { t: 0.30, pos: [ 3.5, 3.2, -40], look: [-14,  6,  -56] }, // turning toward Bayt Al-Umma
-  { t: 0.38, pos: [  -3, 5.0, -70], look: [-22,  8,  -56] }, // arcing in front of the facade
-  { t: 0.46, pos: [  -8, 7.5, -80], look: [-22,  9,  -58] }, // close three-quarter view
-  { t: 0.54, pos: [   2, 10,  -92], look: [ -2,  4, -130] }, // swinging back to the avenue, rising
-  { t: 0.64, pos: [   8, 26, -112], look: [ -2,  1, -148] }, // crane shot above the rooftops
-  { t: 0.74, pos: [   0, 56, -130], look: [  0, -6, -190] }, // top-down aerial — the dataset
-  { t: 0.84, pos: [  -1, 14, -172], look: [  2,  4, -208] }, // swooping back down
-  { t: 0.92, pos: [   0, 4.5,-192], look: [  0,  6, -228] }, // approach to the finale
-  { t: 1.00, pos: [   0, 3.2,-204], look: [  0,  8, -232] }, // settled — facing the monument
+  { t: 0.30, pos: [ 3.5, 3.2, -34], look: [-16,  5,  -42] }, // turning toward Bayt Al-Umma
+  { t: 0.38, pos: [  -3, 5.0, -62], look: [-22,  6,  -40] }, // arcing in front of the villa
+  { t: 0.46, pos: [  -8, 7.0, -74], look: [-23,  7,  -38] }, // close three-quarter view
+  { t: 0.54, pos: [   2, 10,  -92], look: [ -2,  4, -130] }, // leaving the city, rising
+  { t: 0.64, pos: [   8, 26, -112], look: [-12,  0, -150] }, // crane shot — desert + pyramids ahead left
+  { t: 0.74, pos: [   0, 56, -130], look: [ -6, -6, -190] }, // top-down aerial — the dataset
+  { t: 0.84, pos: [  -8, 11, -174], look: [  5,  2, -206] }, // sweeping across the shoreline
+  { t: 0.92, pos: [   0, 4.5,-192], look: [  0,  6, -228] }, // skimming the beach to the finale
+  { t: 1.00, pos: [   0, 3.2,-204], look: [  0,  8, -232] }, // settled — over the water, facing the monument
 ]
 
 /* Pre-built Vector3s (built once at module load — no per-frame allocation) */
@@ -97,91 +97,97 @@ export function sampleCamera(t, outPos, outLook) {
 }
 
 /* ── Narrative beats ─────────────────────────────────────────────────────
- * Each section drives: the HUD rail, the DOM panel (layout chosen by
- * `type`), and nav fly-to targets (`focus` = the most photogenic moment).
+ * Each section drives: the HUD rail, an in-world 3D text panel (layout
+ * chosen by `type`, see ScanPanels3D), and nav fly-to targets.
+ *
+ * `panel.position` is where the floating annotation lives in the world;
+ * `panel.facing` is the camera position at the beat's focus moment — the
+ * panel is oriented toward it once, then sits fixed in space like a real
+ * survey annotation the camera happens to fly past.
  */
 export const SECTIONS = [
   {
     id: 'arrival',
     label: 'Arrival',
     start: 0.0, end: 0.13, focus: 0.0,
-    type: 'intro',
-    anchor: 'bottomLeft',
+    type: 'text',
     kicker: '01 · The Scan',
-    title: 'Reality, captured.',
+    title: 'Reality,\ncaptured.',
     body: 'You are watching a laser scan in progress. X-Dimension turns Egypt’s built world — every façade, every street, every monument — into millimetre-accurate living data.',
+    panel: { position: [-13.5, 22, -2], facing: [0, 42, 30], width: 13 },
   },
   {
     id: 'about',
     label: 'Who we are',
     start: 0.13, end: 0.28, focus: 0.20,
     type: 'text',
-    anchor: 'left',
     kicker: '02 · Who we are',
-    title: 'We measure what matters.',
+    title: 'We measure\nwhat matters.',
     body: 'X-Dimension is a Cairo-based reality-capture studio for architects, engineers and conservators. We scan buildings, infrastructure and heritage sites — then hand you data you can build on.',
+    panel: { position: [2.5, 10.5, -48], facing: [1.1, 2.9, -19.5], width: 13 },
   },
   {
     id: 'heritage',
     label: 'Heritage',
     start: 0.28, end: 0.50, focus: 0.40,
     type: 'caseStudy',
-    anchor: 'right',
     kicker: '03 · Heritage',
     title: 'Bayt Al-Umma',
     body: 'The House of the Nation — home of Saad Zaghloul and a landmark of Egypt’s 1919 revolution. We documented it stone by stone in a single survey-grade point cloud, so its memory can outlast its masonry.',
-    meta: 'Full exterior documentation · survey-grade accuracy',
-    cta: 'Enter the scan',
+    meta: 'Full documentation · survey-grade accuracy',
+    cta: 'ENTER THE SCAN',
+    panel: { position: [-16, 19.5, -44], facing: [-4.7, 5.6, -73.9], width: 13 },
   },
   {
     id: 'services',
     label: 'What we do',
     start: 0.50, end: 0.68, focus: 0.62,
     type: 'services',
-    anchor: 'left',
     kicker: '04 · What we do',
-    title: 'From points to intelligence.',
+    title: 'From points\nto intelligence.',
     services: [
-      { name: '3D Laser Scanning',      desc: 'Survey-grade capture of as-built conditions, inside and out.' },
-      { name: 'Scan to BIM',            desc: 'Point clouds modelled into structured, intelligent Revit models.' },
+      { name: '3D Laser Scanning',      desc: 'Survey-grade capture of as-built conditions.' },
+      { name: 'Scan to BIM',            desc: 'Point clouds modelled into intelligent Revit models.' },
       { name: 'Heritage Documentation', desc: 'Digital twins of monuments, archived for restoration.' },
       { name: 'As-Built Drawings',      desc: 'Plans, sections and elevations, straight from the cloud.' },
     ],
+    panel: { position: [-7, 15, -126], facing: [6.8, 22.8, -108], width: 14 },
   },
   {
     id: 'scale',
     label: 'In numbers',
     start: 0.68, end: 0.80, focus: 0.74,
     type: 'stats',
-    anchor: 'bottomCenter',
     kicker: '05 · In numbers',
+    title: 'From Cairo to the coast.',
     stats: [
-      { value: 60,  suffix: '+',  label: 'Projects delivered' },
-      { value: 9,   suffix: 'B+', label: 'Points captured' },
-      { value: 2,   suffix: 'mm', label: 'Survey accuracy' },
+      { value: 60,  suffix: '+',  label: 'PROJECTS DELIVERED' },
+      { value: 9,   suffix: 'B+', label: 'POINTS CAPTURED' },
+      { value: 2,   suffix: 'MM', label: 'SURVEY ACCURACY' },
     ],
+    panel: { position: [-2.5, 33, -153], facing: [0, 56, -130], width: 22 },
   },
   {
     id: 'careers',
     label: 'Join us',
     start: 0.80, end: 0.88, focus: 0.84,
     type: 'careers',
-    anchor: 'right',
     kicker: '06 · Join us',
-    title: 'See Egypt differently.',
+    title: 'See Egypt\ndifferently.',
     body: 'Surveyors, BIM modellers, point-cloud wranglers — if you want your work to outlast you, we want to hear from you.',
     cta: 'careers@xdimension.co',
+    panel: { position: [1, 8.5, -193], facing: [-8, 11, -174], width: 13 },
   },
   {
     id: 'contact',
     label: 'Contact',
     start: 0.88, end: 1.001, focus: 1.0,
     type: 'contact',
-    anchor: 'bottomCenter',
     kicker: '07 · Contact',
     title: 'Map what matters.',
     email: 'info@xdimension.co',
-    location: 'Cairo, Egypt',
+    location: 'CAIRO, EGYPT',
+    panel: { position: [0, 4.6, -222], facing: [0, 3.2, -204], width: 14 },
   },
 ]
 
@@ -210,72 +216,43 @@ export const PROJECTS = {
   },
 }
 
-/* ── 3D particle headlines ───────────────────────────────────────────────
- * Five placements, each staged differently so no two beats feel alike:
+/* ── Solid 3D headline monuments ─────────────────────────────────────────
+ * Two hero moments rendered as solid extruded type with amber wire edges —
+ * crisp "blueprint" lettering standing in the world:
  *
- *   gate      — floats mid-air; the descending camera flies THROUGH it
- *   street    — classic street-side billboard during the ground glide
- *   landmark  — name hovering beside Bayt Al-Umma, angled at the arc
- *   asphalt   — painted flat on the road, read from the crane shot
- *   monument  — the finale: company name assembling at the road's end
- *
- * `lines` entries: { text, size, depth, count }. `rotation` is XYZ euler.
+ *   gate      — floats mid-air; the descending camera flies past it
+ *   monument  — the finale: the company name standing IN the sea,
+ *               with a faint reflection on the water
  */
-export const TEXTS_3D = [
+export const SOLID_TEXTS = [
   {
     id: 'gate',
-    scrollStart: -0.01, scrollEnd: 0.13,
-    assembleDelay: 2.6,                  // wait for the scan sweep to pass
-    position: [0.5, 12, -22],
+    start: -0.01, end: 0.135,
+    revealDelay: 2.8,                    // let the laser sweep pass first
+    position: [0, 13, -24],
     rotation: [0.30, 0, 0],              // tilted up toward the descending camera
-    pointSize: 0.32,
-    lines: [
-      { text: 'REALITY,',  size: 2.6, depth: 0.6, count: 4400 },
-      { text: 'CAPTURED.', size: 2.6, depth: 0.6, count: 4400 },
-    ],
-  },
-  {
-    id: 'street',
-    scrollStart: 0.12, scrollEnd: 0.30,
-    position: [2, 12, -56],              // banner floating in the sky over the avenue
-    rotation: [0, 0, 0],
-    pointSize: 0.24,
-    lines: [
-      { text: 'EVERY POINT',   size: 1.6, depth: 0.45, count: 3200 },
-      { text: 'TELLS A STORY', size: 0.9, depth: 0.22, count: 1900 },
-    ],
-  },
-  {
-    id: 'landmark',
-    scrollStart: 0.27, scrollEnd: 0.52,
-    position: [-17, 18, -36],            // hovers off the villa's near corner
-    billboard: true,                     // always turns to face the arcing camera
-    pointSize: 0.24,
-    lines: [
-      { text: 'BAYT AL-UMMA',         size: 1.5,  depth: 0.45, count: 3000 },
-      { text: 'THE HOUSE OF THE NATION', size: 0.6, depth: 0.18, count: 1500 },
-    ],
-  },
-  {
-    id: 'asphalt',
-    scrollStart: 0.48, scrollEnd: 0.70,
-    position: [0, 0.4, -130],
-    rotation: [-Math.PI / 2, 0, 0],      // lying flat on the road like survey markings
-    pointSize: 0.30,
-    lines: [
-      { text: 'FROM POINTS', size: 2.1, depth: 0.10, count: 3600 },
-      { text: 'TO INSIGHT',  size: 2.1, depth: 0.10, count: 3600 },
-    ],
+    size: 2.5, depth: 0.55, lineGap: 1.1,
+    lines: ['REALITY,', 'CAPTURED.'],
   },
   {
     id: 'monument',
-    scrollStart: 0.80, scrollEnd: 1.001,
-    position: [0, 11.5, -234],
+    start: 0.79, end: 1.001,
+    position: [0, 9.5, -234],
     rotation: [0, 0, 0],                 // faces the settling camera head-on
-    pointSize: 0.30,
-    lines: [
-      { text: 'X-DIMENSION', size: 2.3, depth: 0.6, count: 5200 },
-      { text: 'REALITY, CAPTURED. FUTURE, BUILT.', size: 0.62, depth: 0.16, count: 1900 },
-    ],
+    size: 2.6, depth: 0.8, lineGap: 1.2,
+    lines: ['X-DIMENSION'],
+    reflection: true,                    // mirrored on the water below
   },
+]
+
+/* ── Survey road markings ────────────────────────────────────────────────
+ * Tiny amber chainage stamps painted flat on the asphalt every ~45 m —
+ * the kind of stationing marks a real survey crew leaves behind.
+ */
+export const ROAD_MARKINGS = [
+  { position: [-5.4, 0.06,  -18], text: 'CH 0+048 · SCAN OK' },
+  { position: [ 5.2, 0.06,  -62], text: 'CH 0+092 · SECTOR 02' },
+  { position: [-5.6, 0.06, -108], text: 'CH 0+138 · SCAN OK' },
+  { position: [ 5.4, 0.06, -148], text: 'CH 0+178 · SECTOR 04' },
+  { position: [-5.2, 0.06, -188], text: 'CH 0+218 · END OF SURVEY' },
 ]

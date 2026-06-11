@@ -7,10 +7,15 @@ import { useStore } from '@/store/useStore'
 import { CAMERA_KEYFRAMES } from '@/config/journey'
 import StreetCloud from './StreetCloud'
 import CityBlocks from './CityBlocks'
+import DuneCloud from './DuneCloud'
+import PyramidsCloud from './PyramidsCloud'
+import OceanCloud from './OceanCloud'
 import SandCloud from './SandCloud'
 import ScanSweep from './ScanSweep'
 import ScrollCamera from './ScrollCamera'
-import SectionTextParticles from './SectionTextParticles'
+import ScanPanels3D from './ScanPanels3D'
+import SolidHeadlines from './SolidHeadlines'
+import RoadMarkings from './RoadMarkings'
 import BaytAlUmmaCloud from './BaytAlUmmaCloud'
 import ProjectCameraController from './ProjectCameraController'
 import styles from './Scene.module.css'
@@ -44,17 +49,24 @@ export default function Scene() {
         {showWorld && <SandCloud />}
         {showWorld && <ScanSweep />}
 
+        {/* In-world typography: section panels, hero headlines, survey marks */}
         {showWorld && (
           <Suspense fallback={null}>
-            <SectionTextParticles />
+            <ScanPanels3D />
+            <SolidHeadlines />
+            <RoadMarkings />
           </Suspense>
         )}
 
         {/* Bayt Al-Umma — always mounted so the fly-in animation works */}
         <BaytAlUmmaCloud />
 
+        {/* Environment zones: city → desert → coast */}
         {showWorld && <StreetCloud />}
         {showWorld && <CityBlocks />}
+        {showWorld && <DuneCloud />}
+        {showWorld && <PyramidsCloud />}
+        {showWorld && <OceanCloud />}
       </Canvas>
     </div>
   )

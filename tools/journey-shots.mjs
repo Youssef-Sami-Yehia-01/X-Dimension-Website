@@ -28,8 +28,8 @@ const page = await browser.newPage({ viewport: { width: 1600, height: 900 } })
 page.on('console', m => { if (m.type() === 'error') console.log('[console.error]', m.text()) })
 page.on('pageerror', e => console.log('[pageerror]', e.message))
 
-await page.goto('http://localhost:3000', { waitUntil: 'networkidle' })
-await page.waitForTimeout(2500)
+await page.goto('http://localhost:3000', { waitUntil: 'domcontentloaded', timeout: 60000 })
+await page.waitForTimeout(4500)
 await page.screenshot({ path: `${OUT}/0-intro.png` })
 
 // Click through the intro

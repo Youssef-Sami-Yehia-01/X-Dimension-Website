@@ -3,8 +3,8 @@ import { chromium } from 'playwright'
 
 const browser = await chromium.launch({ args: ['--enable-unsafe-swiftshader', '--use-gl=angle'] })
 const page = await browser.newPage({ viewport: { width: 1600, height: 900 } })
-await page.goto('http://localhost:3000', { waitUntil: 'networkidle' })
-await page.waitForTimeout(2000)
+await page.goto('http://localhost:3000', { waitUntil: 'domcontentloaded', timeout: 60000 })
+await page.waitForTimeout(4000)
 await page.mouse.click(800, 450)
 await page.waitForTimeout(6000)
 

@@ -9,16 +9,18 @@ import { useStore } from '@/store/useStore'
 import { BUILDING_WORLD_X, BUILDING_WORLD_Z } from './BaytAlUmmaCloud'
 
 const GROUND_Y     = 0.22
-const HALF_H       = 13               // BaytAlUmmaCloud TARGET_HEIGHT / 2
+const HALF_H       = 7                // BaytAlUmmaCloud TARGET_HEIGHT / 2
 const BUILDING_CY  = GROUND_Y + HALF_H   // vertical center of cloud in world
 
 // Camera keyframes for the fly-in / fly-out.
-// The facade faces +X (toward the road), so the dive approaches from the
-// road and the orbit view opens from the +X side, framing the full length.
-const BUILDING_CENTER = new THREE.Vector3(BUILDING_WORLD_X, BUILDING_CY, BUILDING_WORLD_Z)
+// The scan is a villa block (north end, around z −37) with its long garden
+// wall trailing south. Orbit focuses the villa block; the wall recedes
+// behind it as depth. Facade faces +X (toward the road).
+const FOCUS_Z = -37
+const BUILDING_CENTER = new THREE.Vector3(BUILDING_WORLD_X, BUILDING_CY, FOCUS_Z)
 const CAM_SIDE  = new THREE.Vector3(  5,  6, -40)  // road side, turned toward building
-const CAM_CLOSE = new THREE.Vector3(-12, 10, BUILDING_WORLD_Z) // right at the facade face
-const CAM_ORBIT = new THREE.Vector3( 30, 17, BUILDING_WORLD_Z + 5)
+const CAM_CLOSE = new THREE.Vector3(-10,  8, -42)  // right at the villa's face
+const CAM_ORBIT = new THREE.Vector3(  9, 13, -26)
 
 const SCENE_DARK = 0x060608
 const SCENE_FOG  = 0x151515

@@ -6,7 +6,6 @@ import IntroScreen from '@/components/ui/IntroScreen'
 import SiteUI from '@/components/ui/SiteUI'
 import FogCanvas from '@/components/ui/FogCanvas'
 import ScrollDriver from '@/components/ui/ScrollDriver'
-import SectionPanels from '@/components/ui/SectionPanels'
 import ProjectTransitionOverlay from '@/components/ui/ProjectTransitionOverlay'
 import ProjectUI from '@/components/ui/ProjectUI'
 import styles from './page.module.css'
@@ -31,9 +30,6 @@ export default function ClientApp() {
 
       {/* Intro overlay */}
       {!isExploring && <IntroScreen />}
-
-      {/* Narrative copy panels, driven by scroll progress */}
-      <SectionPanels />
 
       {/* HUD chrome — fades while inside a project */}
       {isExploring && <SiteUI hidden={projectState !== 'idle'} />}

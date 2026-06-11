@@ -31,7 +31,7 @@ import { sweepArrivalTime } from './scanTiming'
  * orbit mode so the building inspects true. Distance fade is pushed out
  * beyond orbit range (the hero never dissolves while being examined).
  */
-const TARGET_HEIGHT = 26     // hero-prominent next to the 22-unit city blocks
+const TARGET_HEIGHT = 14     // two-storey villa — broad presence, honest scale
 const DATA_URL      = '/bayt-al-umma-points.bin'
 const GROW_DUR      = 2.4
 const DENSIFY       = 4      // extra jittered copies per source point
@@ -112,10 +112,14 @@ export default function BaytAlUmmaCloud() {
           }
         }
 
+        // The scan is exported Z-up (like the city-block FBX): the density
+        // histogram shows the ground slab at minZ and floor bands above it.
+        // True shape: 257 long (X) × 126 deep (Y) × 58 tall (Z).
+        // Stand it upright: world-up ← data Z, base on the ground.
         const cx  = (lo[0] + hi[0]) / 2
-        const loY = lo[1]
-        const cz  = (lo[2] + hi[2]) / 2
-        const s   = TARGET_HEIGHT / Math.max(0.001, hi[1] - lo[1])
+        const cy  = (lo[1] + hi[1]) / 2
+        const loZ = lo[2]
+        const s   = TARGET_HEIGHT / Math.max(0.001, hi[2] - lo[2])
 
         // Densified output: each kept point + DENSIFY jittered echoes.
         // Base sits at local Y = 0 (ground), centred on X/Z.
@@ -125,9 +129,9 @@ export default function BaytAlUmmaCloud() {
         const glo = new Float32Array(total)
         let w = 0
         for (const i of kept) {
-          const bx = (rawPos[i * 3]     - cx)  * s
-          const by = (rawPos[i * 3 + 1] - loY) * s
-          const bz = (rawPos[i * 3 + 2] - cz)  * s
+          const bx = (rawPos[i * 3]     - cx)  * s   // length ← data X
+          const by = (rawPos[i * 3 + 2] - loZ) * s   // height ← data Z, base at 0
+          const bz = (rawPos[i * 3 + 1] - cy)  * s   // depth  ← data Y
           const r = rawCol[i * 3] / 255, gc = rawCol[i * 3 + 1] / 255, b = rawCol[i * 3 + 2] / 255
 
           for (let m = 0; m <= DENSIFY; m++) {

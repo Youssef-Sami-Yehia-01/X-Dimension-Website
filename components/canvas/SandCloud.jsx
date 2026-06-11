@@ -24,7 +24,7 @@ import { injectCurvature } from './curveWorld'
 const COUNT    = 3400
 const X_SPAN   = 110
 const Z_NEAR   = 30
-const Z_FAR    = -245
+const Z_FAR    = -185   // the dusty air ends at the shoreline — sea air is clear
 const FADE_DUR = 2.8
 
 function buildGeometry() {

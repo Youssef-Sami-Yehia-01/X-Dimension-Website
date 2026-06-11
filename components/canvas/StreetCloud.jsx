@@ -11,11 +11,28 @@ import { sweepFrontZ, SWEEP_START_Z } from './scanTiming'
 const HALF_ROAD  = 3.5    // half road width → total road = 7 units (2 lanes)
 const CURB_H     = 0.22
 const CURB_W     = 0.18
-const SWALK_W    = 60.0   // very wide pavements
+const SWALK_W    = 60.0   // very wide pavements (city zone)
 const SWALK_Y    = 0.22
 const Z_NEAR     = 30
-const Z_FAR      = -245   // street runs past the contact monument at -234
-const Z_RANGE    = Z_NEAR - Z_FAR   // 275 units
+const Z_FAR      = -200   // the road dissolves into the sea at the shoreline
+const Z_RANGE    = Z_NEAR - Z_FAR   // 230 units
+
+/* ── Environment zones along the journey ────────────────────────────────
+ * city (wide pavements) → desert (narrow shoulder, dunes take over) →
+ * coast (even the shoulder sinks into the sand before the shoreline).
+ * Returns the pavement half-width at a given Z.                          */
+const CITY_END    = -100
+const DESERT_RAMP = -128   // pavement has narrowed to a shoulder by here
+const COAST_RAMP  = -184   // shoulder starts sinking into the beach
+const SHOULDER_W  = 6
+
+function pavementWidthAt(z) {
+  if (z > CITY_END)    return SWALK_W
+  if (z > DESERT_RAMP) return THREE.MathUtils.lerp(SWALK_W, SHOULDER_W, (CITY_END - z) / (CITY_END - DESERT_RAMP))
+  if (z > COAST_RAMP)  return SHOULDER_W
+  if (z > Z_FAR + 4)   return THREE.MathUtils.lerp(SHOULDER_W, 0, (COAST_RAMP - z) / (COAST_RAMP - (Z_FAR + 4)))
+  return 0
+}
 
 /* ── Warm off-white tint ─────────────────────────────────────────────────
  * R:G:B = 1 : 0.93 : 0.84  →  pure white becomes a warm cream/beige.
@@ -115,19 +132,24 @@ function buildStreetGeometry() {
       pt( HALF_ROAD + cx, cy, z,  0.45, 0.10,  0.35,  0.06, 0.30)
     }
 
-    /* ── Wide pavements ──────────────────────────────────────────── */
-    const SWALK_COLS = 95        // 95 cols × 60 units ≈ one point every 0.63 units
-    const swalkBase  = HALF_ROAD + CURB_W
-    for (let c = 0; c < SWALK_COLS; c++) {
-      const t  = c / (SWALK_COLS - 1)
-      pt(-(swalkBase + t * SWALK_W), SWALK_Y, z,  0.26, 0.08,  0.12)
-      pt( (swalkBase + t * SWALK_W), SWALK_Y, z,  0.26, 0.08,  0.12)
-    }
+    /* ── Pavements — width depends on the environment zone ───────── */
+    const width = pavementWidthAt(z)
+    if (width > 0.5) {
+      // Keep point density constant (~0.63 units/col) as the width tapers
+      const cols = Math.max(2, Math.round(95 * (width / SWALK_W)))
+      const swalkBase = HALF_ROAD + CURB_W
+      for (let c = 0; c < cols; c++) {
+        const t = c / (cols - 1)
+        pt(-(swalkBase + t * width), SWALK_Y, z,  0.26, 0.08,  0.12)
+        pt( (swalkBase + t * width), SWALK_Y, z,  0.26, 0.08,  0.12)
+      }
 
-    /* Extra scatter on pavements */
-    for (let s = 0; s < 9; s++) {
-      pt(-(swalkBase + Math.random() * SWALK_W), SWALK_Y, z,  0.22, 0.06,  0.08,  0.08, 0.12)
-      pt( (swalkBase + Math.random() * SWALK_W), SWALK_Y, z,  0.22, 0.06,  0.08,  0.08, 0.12)
+      /* Extra scatter on pavements */
+      const scatterN = Math.max(1, Math.round(9 * (width / SWALK_W)))
+      for (let s = 0; s < scatterN; s++) {
+        pt(-(swalkBase + Math.random() * width), SWALK_Y, z,  0.22, 0.06,  0.08,  0.08, 0.12)
+        pt( (swalkBase + Math.random() * width), SWALK_Y, z,  0.22, 0.06,  0.08,  0.08, 0.12)
+      }
     }
   }
 
